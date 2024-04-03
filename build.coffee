@@ -1,13 +1,18 @@
-coffeeScriptPlugin = require 'esbuild-coffeescript'
+#coffeeScriptPlugin = require 'esbuild-coffeescript'
+#{sassPlugin} = require 'esbuild-sass-plugin'
 esbuild = require 'esbuild'
 
 context = () ->
-    ctx = await esbuild.context
-        entryPoints: ['index.coffee']
-        outdir: 'dist'
-        sourcemap: true
-        bundle: true
-        plugins: [coffeeScriptPlugin()]
+	ctx = await esbuild.context
+		entryPoints: ['index.coffee']
+		outdir: 'dist'
+		sourcemap: true
+		bundle: true
+		plugins: [
+			require("esbuild-coffeescript")()
+			require("esbuild-sass-plugin").sassPlugin
+				cache: false
+		]
 
 run = () ->
 	cmd = process.argv[2] ? "build"

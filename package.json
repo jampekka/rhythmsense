@@ -10,13 +10,16 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@observablehq/plot": "^0.6.14",
+    "bootstrap": "^5.3.3",
     "chart.js": "^4.4.2",
     "coffeescript": "^2.7.0",
     "esbuild-coffeescript": "^2.2.0",
+    "esbuild-sass-plugin": "^3.2.0",
     "jquery": "^3.7.1",
     "lit": "^3.1.2",
     "plotly.js": "^2.30.1",
     "plotly.js-dist": "^2.30.1",
+    "samplesourcenode": "github:jampekka/samplesourcenode",
     "uplot": "^1.6.30"
   }
 }
