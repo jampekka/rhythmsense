@@ -10,7 +10,7 @@ click_sample = null
 complete_sample = null
 hit_sample = null
 
-n_listening = 10
+n_listening = 15
 n_muted = 30
 bpm = 100
 
