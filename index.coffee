@@ -117,9 +117,6 @@ run_trial = -> new Promise (resolve) ->
 
 	controller = new AbortController()
 	click = (ev) ->
-		return if ev.repeat
-		return if ev.key != " "
-		
 		# TODO: Huge latency/jitter here
 		b = ctx.createBufferSource()
 		b.buffer = hit_sample
@@ -164,9 +161,17 @@ run_trial = -> new Promise (resolve) ->
 			clicker.stop()
 			play_sample ctx, complete_sample
 			resolve()
+	
+	onkeydown = (ev) ->
+		return if ev.repeat
+		return if ev.key != " "
+		click(ev)
 
-	document.addEventListener "keydown", click,
+	document.addEventListener "keydown", onkeydown,
 		signal: controller.signal
+		useCapture: true
+	document.addEventListener "pointerdown", click,
+		signal: controller.sig
 		useCapture: true
 
 wait_for_event = (el=document, ev="click") -> new Promise (resolve) ->

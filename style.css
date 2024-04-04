@@ -38,6 +38,10 @@ body > * {
 	
 }
 
+#beatindicator {
+	user-select: none;
+}
+
 #footer {
 	width: 100%;
 }
