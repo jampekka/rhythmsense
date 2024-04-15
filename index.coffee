@@ -85,7 +85,60 @@ listen = (el, event, opts, callback) ->
 	opts = {opts..., {signal: aborter.signal}...}
 	el.addEventListener event, handler, opts
 
+
 beatIndicator = document.querySelector "#beatindicator"
+
+easeInOffset = 0.1
+###
+hitAnim = [
+	borderColor: "var(--beatRingColor)"
+	offset: 0.0
+,
+	borderColor: "var(--beatRingHitColor)"
+	offset: easeInOffset
+	easing: "ease-in"
+,
+	borderColor: "var(--beatRingColor)"
+	easing: "ease-out"
+]
+###
+
+metronomeAnim = [
+	borderColor: "var(--beatRingColor)"
+	#borderWidth: "var(--beatBorderWidth)"
+	#margin: 0
+	offset: 0.0
+,
+	borderColor: "var(--beatRingHitColor)"
+	#borderWidth: "var(--beatBorderHitWidth)"
+	offset: easeInOffset
+	#margin: "var(--beatBorderWidth)"
+	easing: "ease-in"
+,
+	borderColor: "var(--beatRingColor)"
+	#borderWidth: "var(--beatBorderWidth)"
+	#margin: 0
+	easing: "ease-out"
+]
+
+hitAnim = [
+	backgroundColor: "var(--beatBgColor)"
+	#borderColor: "var(--beatBgColor)"
+	offset: 0.0
+,
+	backgroundColor: "var(--beatBgHitColor)"
+	#borderColor: "var(--beatBgHitColor)"
+	easing: "ease-in"
+	offset: easeInOffset
+,
+	backgroundColor: "var(--beatBgColor)"
+	#borderColor: "var(--beatBgColor)"
+	easing: "ease-out"
+]
+
+animTiming =
+	duration: 0.3*1000
+
 # TODO: Parametrize. Perhaps create a class
 run_trial = -> new Promise (resolve) ->
 	context = new Tone.Context()
@@ -95,17 +148,24 @@ run_trial = -> new Promise (resolve) ->
 		context: context
 		url: click_sample
 	metronome.connect metronome_gain
+
+	metronomeOn = true
 	
 	# This is not really used
 	context.transport.bpm.value = bpm
 	
 	onBeat = (time) ->
+		# Maybe stop the transport instead?
+		return if not metronomeOn
+		timeToEvent = time - context.currentTime
+		console.log timeToEvent
+		timing = {delay: timeToEvent*1000, animTiming...}
+		beatIndicator.animate metronomeAnim, timing
 		metronome.start time
 	
 	# Don't use the transport bpm, operate on time diffs directly
 	beat_to_beat = 1/(bpm/60)
 	metronome_repeat = context.transport.scheduleRepeat onBeat, beat_to_beat
-	console.log metronome_repeat
 	context.transport.start()
 
 	beats = []
@@ -129,10 +189,13 @@ run_trial = -> new Promise (resolve) ->
 	controller = new AbortController()
 	onHit = (ev) ->
 		hitter.start(0.0)
+		beatIndicator.animate hitAnim, animTiming
 		beats.push ev.timeStamp/1000
 		
+		# TODO: Fade out instead?
 		if beats.length == n_listening
 			metronome_gain.gain.rampTo 0, 0.3
+			metronomeOn = false
 		
 		if beats.length == n_muted + n_listening
 			teardown()
@@ -183,7 +246,7 @@ setup = () ->
 		
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
-		beatIndicator.innerHTML = "Beat to the rythm"
+		beatIndicator.innerHTML = "Beat to the rhythm"
 		await run_trial()
 		render()
 	
