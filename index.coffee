@@ -137,7 +137,7 @@ hitAnim = [
 ]
 
 animTiming =
-	duration: 0.3*1000
+	duration: 0.2*1000
 
 # TODO: Parametrize. Perhaps create a class
 run_trial = -> new Promise (resolve) ->
