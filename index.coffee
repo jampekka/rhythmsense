@@ -141,7 +141,9 @@ animTiming =
 
 # TODO: Parametrize. Perhaps create a class
 run_trial = -> new Promise (resolve) ->
-	context = new Tone.Context()
+	context = new Tone.Context
+		lookAhead: 0
+		latencyHint: 0
 
 	metronome_gain = new Tone.Gain(context: context).toDestination()
 	metronome = new Tone.Player
