@@ -18,7 +18,6 @@ n_muted = 30
 bpm = 100
 
 echos = [
-	1.0
 	1/(bpm/60)/2
 	#1/(bpm/60)*1.5
 ]
@@ -301,7 +300,10 @@ setup = () ->
 			ctx = new AudioContext()
 			click_sample = await load_sample(ctx, 'click.flac')
 			complete_sample = await load_sample(ctx, 'complete.oga')
-			hit_sample = await load_sample(ctx, 'hit.wav')
+			# NOTE: On Chomium this has to be mono for the delays to work. If it's
+			# stereo. Probably related to:
+			# https://github.com/WebAudio/web-audio-api/issues/1719
+			hit_sample = await load_sample(ctx, 'hit.mono.wav')
 		
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
