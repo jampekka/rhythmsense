@@ -209,7 +209,7 @@ class Metronome extends EventTarget
 		
 
 # TODO: Parametrize. Perhaps create a class
-run_trial = -> new Promise (resolve) ->
+run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	context = new AudioContext latencyHint: 0
 	
 	beat_interval = 1/(bpm/60)
@@ -308,7 +308,8 @@ setup = () ->
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
 		beatIndicator.innerHTML = "Beat to the rhythm"
-		await run_trial()
+		bpm = Math.random()*100 + 50
+		await run_trial(bpm)
 		render()
 	
 setup()
