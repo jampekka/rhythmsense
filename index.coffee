@@ -1,6 +1,5 @@
 Plotly = require "plotly.js-dist"
 $ = require 'jquery'
-#Tone = require 'tone'
 
 allbeats = []
 
@@ -73,8 +72,6 @@ render = ->
 		showlegend: false
 		font:
 			color: "white"
-
-#onEvent = (el, event, callback) ->
 
 STOP = Symbol("STOP")
 listen = (el, event, opts, callback) ->
@@ -214,29 +211,11 @@ class Metronome extends EventTarget
 
 # TODO: Parametrize. Perhaps create a class
 run_trial = -> new Promise (resolve) ->
-	
-	#nativeContext = new AudioContext
-	#	latencyHint: 0
-
-	#context = new Tone.Context
-	#	#context: nativeContext
-	#	#lookAhead: 0
-	#	latencyHint: 0
-	
 	context = new AudioContext latencyHint: 0
-	
-	#metronome_gain = new Tone.Gain(context: context).toDestination()
-	#metronome = new Tone.Player
-	#	context: context
-	#	url: click_sample
-	#metronome.connect metronome_gain
 	
 	beat_interval = 1/(bpm/60)
 	metronome = new Metronome context, click_sample, beat_interval
 	metronome.output.connect context.destination
-	
-	# This is not really used
-	#context.transport.bpm.value = bpm
 	
 	onBeat = (time) ->
 		# Maybe stop the transport instead?
@@ -247,28 +226,10 @@ run_trial = -> new Promise (resolve) ->
 		#metronome.start time
 	metronome.addEventListener "tickscheduled", (ev) -> onBeat ev.detail.at
 
-	# Don't use the transport bpm, operate on time diffs directly
-	#metronome_repeat = context.transport.scheduleRepeat onBeat, beat_to_beat
-	#context.transport.start()
-
 	beats = []
 	allbeats.push beats
 	console.log allbeats
 
-	###
-	nativeCtx = context.rawContext._nativeContext
-	hitter = new Tone.Player
-		context: context
-		url: hit_sample
-	#.toDestination()
-	hitter_pan = new Tone.Panner
-		context: context
-		pan: 0
-	###
-	
-	#hitter.chain hitter_pan, context.destination
-	
-	
 	hitter = context.createGain()
 	hitter.connect context.destination
 	
@@ -277,43 +238,19 @@ run_trial = -> new Promise (resolve) ->
 		# the sample node gets disconnected/destroyed and its
 		# data doesn't get kept? Or then the max delay bugs out?
 		# TODO: Works on Firefox, fails on Chromium
-		#delay = new Tone.Delay
-		#	context: context
-		#	delayTime: echo
-		#	maxDelay: 2.0
-		#gain = new Tone.Gain
-		#	context: context
-		#	gain: 0.5
-		#console.log "Adding delay", echo
-		#hitter_pan.chain delay, context.destination
 		delay = context.createDelay echo*2
-		console.log echo
 		delay.delayTime.value = echo
-		#gain = context.createGain()
-		#gain.gain.value = 0.5
+		gain = context.createGain()
+		gain.gain.value = 0.5
 		hitter
 			.connect delay
-			#.connect gain
+			.connect gain
 			.connect context.destination
 
-
-	#endChime = new Tone.Player
-	#	context: context
-	#	url: complete_sample
-	#.toDestination()
-	
 
 	metronome.start()
 	controller = new AbortController()
 	onHit = (ev) ->
-		#hitter.start(0.0)
-		#source = new Tone.ToneBufferSource
-		#	context: context
-		#	url: hit_sample
-		#source = ctx.createBufferSource()
-		#source.buffer = hit_sample
-		#source.connect hitter_pan
-		#source.start 0
 		playSample context, hit_sample, hitter
 
 		beatIndicator.animate hitAnim, animTiming
@@ -330,12 +267,9 @@ run_trial = -> new Promise (resolve) ->
 	
 	teardown = ->
 		controller.abort()
-		#metronome.stop()
 		await playSample context, complete_sample
-		#endChime.start(0)
 		
 		context.close()
-		#context.transport.stop()
 		resolve()
 	
 
