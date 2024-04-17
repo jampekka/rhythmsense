@@ -1,6 +1,7 @@
 Plotly = require "plotly.js-dist"
 $ = require 'jquery'
 d3 = require 'd3'
+lobos = require 'lobos'
 
 log_events = []
 
@@ -344,6 +345,9 @@ setup = () ->
 	}
 	render expopts
 	beatIndicator.innerHTML = "Click to start"
+
+	rng = new lobos.Sobol 1
+	rng.next # Skip the first 0
 	while true
 		await wait_for_event beatIndicator
 		# TODO: Load these from a suspended (or offline?) context
@@ -357,7 +361,7 @@ setup = () ->
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
 		beatIndicator.innerHTML = "Beat to the rhythm"
-		bpm = Math.random()*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
+		bpm = rng.next*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
 		echos = []
 		trial_spec = {
 			bpm
@@ -368,5 +372,5 @@ setup = () ->
 		log "trial_starting", trial_spec
 		await run_trial {samples: samples, trial_spec...}
 		render expopts
-	
+
 setup()
