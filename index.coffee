@@ -8,19 +8,21 @@ click_sample = null
 complete_sample = null
 hit_sample = null
 
-n_listening = 15
+n_listening = 10
 n_muted = 30
 
 # Debugging
 #n_listening = 1
-#n_muted = 100
+#n_muted = 10
 
+###
 bpm = 100
 
 echos = [
 	1/(bpm/60)/2
 	#1/(bpm/60)*1.5
 ]
+###
 
 log_events = []
 
@@ -50,26 +52,41 @@ load_sample = (ctx, url) ->
 	buf.channelInterpretation = "speakers"
 	return buf
 
+get_sessions = ->
+	sessions = []
+	for row in log_events
+		if row.type == "trialstart"
+			session = {
+				bpm: row.bpm
+				echos: row.echos
+				hits: []
+			}
+			sessions.push session
+		if row.type == "hit"
+			session.hits.push row.audio_time
+	return sessions
+
 render = ->
 	data = []
-
+	
 	data.push
 		x: [0, n_listening + n_muted]
-		y: [bpm, bpm]
+		y: [0, 0]
 		line:
 			color: "white"
 		type: "line"
 	
 	data.push
 		x: [n_listening, n_listening]
-		y: [bpm - 5, bpm + 5]
+		y: [-5, 5]
 		line:
 			color: "white"
 		type: "line"
-
-	for beats in allbeats
+	
+	for session in get_sessions()
+		beats = session.hits
 		continue if beats.length < 2
-		durs = beats.map (v, i) -> 60/(v - beats[i-1])
+		durs = beats.map (v, i) -> 60/(v - beats[i-1]) - session.bpm
 			
 		x = beats.slice(1).map (x) -> x - beats[0]
 		x = [1..x.length]
@@ -84,11 +101,12 @@ render = ->
 			x: x
 			y: durs
 			type: "scatter"
+			name: Math.round session.bpm, 1
 
 	Plotly.react "footer", data,
 		paper_bgcolor: "black"
 		plot_bgcolor: "black"
-		showlegend: false
+		#showlegend: false
 		font:
 			color: "white"
 
@@ -262,6 +280,8 @@ run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 		# the sample node gets disconnected/destroyed and its
 		# data doesn't get kept? Or then the max delay bugs out?
 		# TODO: Works on Firefox, fails on Chromium
+		echo = 1/(echo/60)
+		console.log echo
 		delay = context.createDelay echo*2
 		delay.delayTime.value = echo
 		gain = context.createGain()
@@ -317,6 +337,19 @@ wait_for_event = (el=document, ev="click") -> new Promise (resolve) ->
 
 
 setup = () ->
+	
+	# Create a context to load the samples. This can be
+	# done without user interaction
+	ctx = new AudioContext()
+
+	samples =
+		click_sample: await load_sample ctx, 'click.flac'
+		# NOTE: On Chomium this has to be mono for the delays to work. If it's
+		# stereo. Probably related to:
+		# https://github.com/WebAudio/web-audio-api/issues/1719
+		hit_sample: await load_sample ctx, 'hit.mono.wav'
+		complete_sample: await load_sample ctx, 'complete.oga'
+	
 	render()
 	beatIndicator.innerHTML = "Click to start"
 	while true
@@ -327,9 +360,6 @@ setup = () ->
 			ctx = new AudioContext()
 			click_sample = await load_sample(ctx, 'click.flac')
 			complete_sample = await load_sample(ctx, 'complete.oga')
-			# NOTE: On Chomium this has to be mono for the delays to work. If it's
-			# stereo. Probably related to:
-			# https://github.com/WebAudio/web-audio-api/issues/1719
 			hit_sample = await load_sample(ctx, 'hit.mono.wav')
 		
 		#TODO: bi.innerHTML = "Get ready to tap"
