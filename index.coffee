@@ -63,7 +63,7 @@ get_sessions = ->
 			}
 			sessions.push session
 		if row.type == "hit"
-			session.hits.push row.audio_time
+			session.hits.push row.timestamp/1000
 	return sessions
 
 render = ->
