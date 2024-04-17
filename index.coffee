@@ -1,29 +1,6 @@
 Plotly = require "plotly.js-dist"
 $ = require 'jquery'
 
-allbeats = []
-
-# TODO: Refactor these
-click_sample = null
-complete_sample = null
-hit_sample = null
-
-n_listening = 10
-n_muted = 30
-
-# Debugging
-#n_listening = 1
-#n_muted = 10
-
-###
-bpm = 100
-
-echos = [
-	1/(bpm/60)/2
-	#1/(bpm/60)*1.5
-]
-###
-
 log_events = []
 
 fs_root = await navigator.storage.getDirectory()
@@ -66,7 +43,7 @@ get_sessions = ->
 			session.hits.push row.timestamp/1000
 	return sessions
 
-render = ->
+render = ({n_listening, n_muted}) ->
 	data = []
 	
 	data.push
@@ -247,7 +224,7 @@ class Metronome extends EventTarget
 		
 
 # TODO: Parametrize. Perhaps create a class
-run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
+run_trial = ({bpm, samples, n_listening, n_muted, echos=[]}) -> new Promise (resolve) ->
 	context = new AudioContext latencyHint: 0
 	ctxlog = (type, data={}) ->
 		log type, {audio_time: context.currentTime, data...}
@@ -255,7 +232,7 @@ run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	ctxlog "trialstart", {bpm, echos, n_listening, n_muted}
 	
 	beat_interval = 1/(bpm/60)
-	metronome = new Metronome context, click_sample, beat_interval
+	metronome = new Metronome context, samples.click, beat_interval
 	metronome.output.connect context.destination
 	
 	onBeat = (time) ->
@@ -296,7 +273,7 @@ run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	controller = new AbortController()
 	onHit = (ev) ->
 		ctxlog "hit", ev
-		playSample context, hit_sample, hitter
+		playSample context, samples.hit, hitter
 		
 
 		beatIndicator.animate hitAnim, animTiming
@@ -313,7 +290,7 @@ run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	
 	teardown = ->
 		controller.abort()
-		await playSample context, complete_sample
+		await playSample context, samples.complete
 		
 		context.close()
 		resolve()
@@ -341,16 +318,20 @@ setup = () ->
 	# Create a context to load the samples. This can be
 	# done without user interaction
 	ctx = new AudioContext()
+	ctx.suspend()
 
 	samples =
-		click_sample: await load_sample ctx, 'click.flac'
+		click: await load_sample ctx, 'click.flac'
 		# NOTE: On Chomium this has to be mono for the delays to work. If it's
 		# stereo. Probably related to:
 		# https://github.com/WebAudio/web-audio-api/issues/1719
-		hit_sample: await load_sample ctx, 'hit.mono.wav'
-		complete_sample: await load_sample ctx, 'complete.oga'
+		hit: await load_sample ctx, 'hit.mono.wav'
+		complete: await load_sample ctx, 'complete.oga'
 	
-	render()
+	n_listening = 10
+	n_muted = 30
+
+	render {n_listening, n_muted}
 	beatIndicator.innerHTML = "Click to start"
 	while true
 		await wait_for_event beatIndicator
@@ -366,7 +347,18 @@ setup = () ->
 		#TODO: Tap to the beat
 		beatIndicator.innerHTML = "Beat to the rhythm"
 		bpm = Math.random()*100 + 50
-		await run_trial(bpm)
-		render()
+		echos = []
+		trial_spec = {
+			bpm
+			echos
+			n_listening: 10
+			n_muted: 30
+		}
+
+		# Debug
+		trial_spec.n_listening = 1; trial_spec.n_muted = 3
+		log "trial_starting", trial_spec
+		await run_trial {samples: samples, trial_spec...}
+		render {n_listening, n_muted}
 	
 setup()
