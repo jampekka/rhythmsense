@@ -13,6 +13,7 @@
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.2",
     "coffeescript": "^2.7.0",
+    "d3": "^7.9.0",
     "esbuild-coffeescript": "^2.2.0",
     "esbuild-sass-plugin": "^3.2.0",
     "jquery": "^3.7.1",

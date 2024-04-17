@@ -1,5 +1,6 @@
 Plotly = require "plotly.js-dist"
 $ = require 'jquery'
+d3 = require 'd3'
 
 log_events = []
 
@@ -43,7 +44,7 @@ get_sessions = ->
 			session.hits.push row.timestamp/1000
 	return sessions
 
-render = ({n_listening, n_muted}) ->
+render = ({n_listening, n_muted, min_bpm, max_bpm}) ->
 	data = []
 	
 	data.push
@@ -52,6 +53,7 @@ render = ({n_listening, n_muted}) ->
 		line:
 			color: "white"
 		type: "line"
+		showlegend: false
 	
 	data.push
 		x: [n_listening, n_listening]
@@ -59,6 +61,7 @@ render = ({n_listening, n_muted}) ->
 		line:
 			color: "white"
 		type: "line"
+		showlegend: false
 	
 	for session in get_sessions()
 		beats = session.hits
@@ -74,13 +77,17 @@ render = ({n_listening, n_muted}) ->
 		meandurs = durs.map (v) ->
 			rolling = s*rolling + (1 - s)*v
 		
+		color = d3.interpolateWarm 0.5
+		rel_bpm = (session.bpm - min_bpm)/(max_bpm - min_bpm)
 		data.push
 			x: x
 			y: durs
 			type: "scatter"
-			name: Math.round session.bpm, 1
+			name: Math.round session.bpm.toFixed 1
+			line:
+				color: d3.interpolatePiYG rel_bpm
 
-	Plotly.react "footer", data,
+	plot = Plotly.react "footer", data,
 		paper_bgcolor: "black"
 		plot_bgcolor: "black"
 		#showlegend: false
@@ -245,10 +252,6 @@ run_trial = ({bpm, samples, n_listening, n_muted, echos=[]}) -> new Promise (res
 		#metronome.start time
 	metronome.addEventListener "tickscheduled", (ev) -> onBeat ev.detail.at
 
-	beats = []
-	allbeats.push beats
-	console.log allbeats
-
 	hitter = context.createGain()
 	hitter.connect context.destination
 	
@@ -258,7 +261,6 @@ run_trial = ({bpm, samples, n_listening, n_muted, echos=[]}) -> new Promise (res
 		# data doesn't get kept? Or then the max delay bugs out?
 		# TODO: Works on Firefox, fails on Chromium
 		echo = 1/(echo/60)
-		console.log echo
 		delay = context.createDelay echo*2
 		delay.delayTime.value = echo
 		gain = context.createGain()
@@ -268,7 +270,7 @@ run_trial = ({bpm, samples, n_listening, n_muted, echos=[]}) -> new Promise (res
 			.connect gain
 			.connect context.destination
 
-
+	beats = []
 	metronome.start()
 	controller = new AbortController()
 	onHit = (ev) ->
@@ -330,8 +332,17 @@ setup = () ->
 	
 	n_listening = 10
 	n_muted = 30
-
-	render {n_listening, n_muted}
+	
+	# Debug
+	n_listening = 1; n_muted = 3
+	
+	expopts = {
+		n_listening
+		n_muted
+		min_bpm: 50
+		max_bpm: 150
+	}
+	render expopts
 	beatIndicator.innerHTML = "Click to start"
 	while true
 		await wait_for_event beatIndicator
@@ -346,19 +357,16 @@ setup = () ->
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
 		beatIndicator.innerHTML = "Beat to the rhythm"
-		bpm = Math.random()*100 + 50
+		bpm = Math.random()*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
 		echos = []
 		trial_spec = {
 			bpm
 			echos
-			n_listening: 10
-			n_muted: 30
+			expopts...
 		}
 
-		# Debug
-		trial_spec.n_listening = 1; trial_spec.n_muted = 3
 		log "trial_starting", trial_spec
 		await run_trial {samples: samples, trial_spec...}
-		render {n_listening, n_muted}
+		render expopts
 	
 setup()
