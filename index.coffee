@@ -334,7 +334,7 @@ setup = () ->
 	n_muted = 30
 	
 	# Debug
-	n_listening = 1; n_muted = 3
+	#n_listening = 1; n_muted = 3
 	
 	expopts = {
 		n_listening
