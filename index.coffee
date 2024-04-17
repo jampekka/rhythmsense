@@ -22,6 +22,26 @@ echos = [
 	#1/(bpm/60)*1.5
 ]
 
+log_events = []
+
+fs_root = await navigator.storage.getDirectory()
+# TODO: May in theory not be unique
+session_id = new Date() .toISOString()
+log_dir = await fs_root.getDirectoryHandle "rhythmsense_log", create: true
+log_file = await log_dir.getFileHandle session_id + ".jsons", create: true
+# TODO: Doesn't work in Safari apparently. Maybe make a worker logger
+# anyway?
+log_writer = await log_file.createWritable()
+log = (type, data) ->
+	header =
+		type: type
+		timestamp: performance.now()
+		utc: Date.now()
+	
+	data = {header..., data...}
+	log_writer.write JSON.stringify(data) + "\n"
+	log_events.push data
+log "session_start", {session_id}
 
 load_sample = (ctx, url) ->
 	buf = await fetch url
@@ -211,6 +231,10 @@ class Metronome extends EventTarget
 # TODO: Parametrize. Perhaps create a class
 run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	context = new AudioContext latencyHint: 0
+	ctxlog = (type, data={}) ->
+		log type, {audio_time: context.currentTime, data...}
+	
+	ctxlog "trialstart", {bpm, echos, n_listening, n_muted}
 	
 	beat_interval = 1/(bpm/60)
 	metronome = new Metronome context, click_sample, beat_interval
@@ -219,6 +243,7 @@ run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	onBeat = (time) ->
 		# Maybe stop the transport instead?
 		#return if not metronomeOn
+		ctxlog "tickscheduled", scheduled_at: time
 		timeToEvent = time - context.currentTime
 		timing = {delay: timeToEvent*1000, animTiming...}
 		beatIndicator.animate metronomeAnim, timing
@@ -250,7 +275,9 @@ run_trial = (bpm, echos=[]) -> new Promise (resolve) ->
 	metronome.start()
 	controller = new AbortController()
 	onHit = (ev) ->
+		ctxlog "hit", ev
 		playSample context, hit_sample, hitter
+		
 
 		beatIndicator.animate hitAnim, animTiming
 		beats.push ev.timeStamp/1000
