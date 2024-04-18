@@ -355,6 +355,8 @@ setup = () ->
 		max_bpm: 150
 	}
 
+	btn = document.querySelector "#start_button"
+	btn.innerHTML = "Start!"
 	await wait_for_event document.querySelector "#start_button"
 	#render expopts
 	main_el.setAttribute "state", "play"
