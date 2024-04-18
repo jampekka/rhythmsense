@@ -1,6 +1,20 @@
-body {
+:root {
+	--beatRingColor: white;
+	--beatRingHitColor: red;
+
+	--beatBgColor: white;
+	--beatBgHitColor: var(--beatRingHitColor);
+
+	--beatBorderWidth: 1.5em;
+	--beatBorderHitWidth: 1.5em;
+}
+
+
+
+#main_container {
 	width: 100%;
 	height: 100%;
+	position: fixed;
 
 	display: flex;
 	flex-direction: column;
@@ -11,19 +25,30 @@ body {
 	margin: 0;
 }
 
-body > * {
+#main_container > * {
 	margin-top: 20px;
+	display: none !important;
 }
 
-:root {
-	--beatRingColor: white;
-	--beatRingHitColor: red;
+button {
+	font-size: 2em;
+	font-weight: bold;
+	padding: 0.3em;
+	border-radius: 0.3em;
+	border: none;
+}
 
-	--beatBgColor: white;
-	--beatBgHitColor: var(--beatRingHitColor);
+#main_container[state="instruct"] > #instructions {
+	display: block !important;
+	text-align: center;
+}
 
-	--beatBorderWidth: 1.5em;
-	--beatBorderHitWidth: 1.5em;
+#main_container[state="play"] > #beatindicatorcontainer {
+	display: flex !important;
+}
+
+#main_container[state="feedback"] > #feedback_container {
+	display: block !important;
 }
 
 #beatindicatorcontainer {
@@ -60,13 +85,19 @@ body > * {
 	align-items: center;
 	justify-content: center;
 	text-align: center;
-	
 }
 
 #beatindicator {
 	user-select: none;
 }
 
-#footer {
+#feedback_container {
 	width: 100%;
+	text-align: center;
+}
+
+#plot_container {
+	/* TODO: Make the height scalable */
+	height: 300px;
+	/*text-align: unset;*/
 }

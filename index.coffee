@@ -84,17 +84,26 @@ render = ({n_listening, n_muted, min_bpm, max_bpm}) ->
 			x: x
 			y: durs
 			type: "scatter"
-			name: Math.round session.bpm.toFixed 1
+			name: Math.round "BPM " + session.bpm.toFixed 1
 			line:
 				color: d3.interpolatePiYG rel_bpm
-
-	plot = Plotly.react "footer", data,
+	
+	layout =
 		paper_bgcolor: "black"
 		plot_bgcolor: "black"
 		#showlegend: false
+		autosize: true
 		font:
 			color: "white"
-
+		xaxis:
+			text: "Beat number"
+		yaxis:
+			text: "BPM error"
+	config = responsive: true
+	# TODO: This currently overflows the legend and the axis texts.
+	# don't know why.
+	plot = Plotly.react "plot_container", data, layout, config
+		
 STOP = Symbol("STOP")
 listen = (el, event, opts, callback) ->
 	if not opts?
@@ -316,8 +325,10 @@ wait_for_event = (el=document, ev="click") -> new Promise (resolve) ->
 
 
 
+main_el = document.querySelector "#main_container"
+
 setup = () ->
-	
+
 	# Create a context to load the samples. This can be
 	# done without user interaction
 	ctx = new AudioContext()
@@ -343,20 +354,17 @@ setup = () ->
 		min_bpm: 50
 		max_bpm: 150
 	}
-	render expopts
-	beatIndicator.innerHTML = "Click to start"
+
+	await wait_for_event document.querySelector "#start_button"
+	#render expopts
+	main_el.setAttribute "state", "play"
+	beatIndicator.innerHTML = "Tap to the beat"
+	
 
 	rng = new lobos.Sobol 1
 	rng.next # Skip the first 0
 	while true
-		await wait_for_event beatIndicator
-		# TODO: Load these from a suspended (or offline?) context
-		# and wrap to an object.
-		if not click_sample
-			ctx = new AudioContext()
-			click_sample = await load_sample(ctx, 'click.flac')
-			complete_sample = await load_sample(ctx, 'complete.oga')
-			hit_sample = await load_sample(ctx, 'hit.mono.wav')
+		main_el.setAttribute "state", "play"
 		
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
@@ -371,6 +379,9 @@ setup = () ->
 
 		log "trial_starting", trial_spec
 		await run_trial {samples: samples, trial_spec...}
+		
+		main_el.setAttribute "state", "feedback"
 		render expopts
+		await wait_for_event document.querySelector "#again_button"
 
 setup()

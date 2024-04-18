@@ -3,14 +3,19 @@
 <head>
 	<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="main_container" state="instruct">
 	<div id="instructions">
-		<h1 id="instruction"></h1>
+		<h1 id="instruction">Keep the Rhythm</h1>
+		<p>[Instructions etc here]</p>
+		<button id="start_button">Start!</button>
 	</div>
 	<div id="beatindicatorcontainer">
 		<div id="beatindicator"></div>
 	</div>
-	<div id="footer">
+	<div id="feedback_container">
+		<h1>[Some nice feedback message]</h1>
+		<div id="plot_container"></div>
+		<button id="again_button">Go again!</button>
 	</div>
 	<script src="dist/index.js"></script>
 </body>
