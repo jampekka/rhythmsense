@@ -9,7 +9,6 @@ get_session_data = (log_events) ->
 		trials: []
 	for row in log_events
 		if row.type == "trial_starting"
-			console.log row
 			trial = {
 				row...,
 				hits: []
@@ -76,6 +75,20 @@ render_bpm_graph = (session) ->
 	plot = Plotly.react "bpm_graph", data, layout, config
 
 do ->
-	sessions = read_logs()
-	[name, log] = (await sessions.next()).value
-	render_bpm_graph get_session_data log
+	sessions = {}
+	
+	sessions_el = document.querySelector "#session_selector"
+	for await [name, log] from read_logs()
+		sessions[name] = get_session_data log
+		sessions_el.innerHTML += """
+		<option value="#{name}">#{name}</option>
+		"""
+	
+	select_session = (name) ->
+		render_bpm_graph sessions[name]
+	
+	select_session Object.keys(sessions)[0]
+	
+	sessions_el.addEventListener "change", (ev) ->
+		select_session ev.target.value
+
