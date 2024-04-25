@@ -3,16 +3,12 @@ $ = require 'jquery'
 d3 = require 'd3'
 lobos = require 'lobos'
 
+logging = require './logging.coffee'
+
 log_events = []
 
-fs_root = await navigator.storage.getDirectory()
-# TODO: May in theory not be unique
-session_id = new Date() .toISOString()
-log_dir = await fs_root.getDirectoryHandle "rhythmsense_log", create: true
-log_file = await log_dir.getFileHandle session_id + ".jsons", create: true
-# TODO: Doesn't work in Safari apparently. Maybe make a worker logger
-# anyway?
-log_writer = await log_file.createWritable()
+logger = await logging.get_logger()
+
 log = (type, data) ->
 	header =
 		type: type
@@ -20,9 +16,10 @@ log = (type, data) ->
 		utc: Date.now()
 	
 	data = {header..., data...}
-	log_writer.write JSON.stringify(data) + "\n"
+	logger data
+
 	log_events.push data
-log "session_start", {session_id}
+log "session_start", {}
 
 load_sample = (ctx, url) ->
 	buf = await fetch url
