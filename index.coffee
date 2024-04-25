@@ -1,6 +1,4 @@
-Plotly = require "plotly.js-dist"
 $ = require 'jquery'
-d3 = require 'd3'
 lobos = require 'lobos'
 
 logging = require './logging.coffee'
@@ -42,64 +40,6 @@ get_sessions = ->
 			session.hits.push row.timestamp/1000
 	return sessions
 
-render = ({n_listening, n_muted, min_bpm, max_bpm}) ->
-	data = []
-	
-	data.push
-		x: [0, n_listening + n_muted]
-		y: [0, 0]
-		line:
-			color: "white"
-		type: "line"
-		showlegend: false
-	
-	data.push
-		x: [n_listening, n_listening]
-		y: [-5, 5]
-		line:
-			color: "white"
-		type: "line"
-		showlegend: false
-	
-	for session in get_sessions()
-		beats = session.hits
-		continue if beats.length < 2
-		durs = beats.map (v, i) -> 60/(v - beats[i-1]) - session.bpm
-			
-		x = beats.slice(1).map (x) -> x - beats[0]
-		x = [1..x.length]
-		durs = durs.slice(1)
-		
-		s = 0.8
-		rolling = durs[0]
-		meandurs = durs.map (v) ->
-			rolling = s*rolling + (1 - s)*v
-		
-		color = d3.interpolateWarm 0.5
-		rel_bpm = (session.bpm - min_bpm)/(max_bpm - min_bpm)
-		data.push
-			x: x
-			y: durs
-			type: "scatter"
-			name: Math.round "BPM " + session.bpm.toFixed 1
-			line:
-				color: d3.interpolatePiYG rel_bpm
-	
-	layout =
-		paper_bgcolor: "black"
-		plot_bgcolor: "black"
-		#showlegend: false
-		autosize: true
-		font:
-			color: "white"
-		xaxis:
-			text: "Beat number"
-		yaxis:
-			text: "BPM error"
-	config = responsive: true
-	# TODO: This currently overflows the legend and the axis texts.
-	# don't know why.
-	plot = Plotly.react "plot_container", data, layout, config
 		
 STOP = Symbol("STOP")
 listen = (el, event, opts, callback) ->
@@ -380,7 +320,6 @@ setup = () ->
 		await run_trial {samples: samples, trial_spec...}
 		
 		main_el.setAttribute "state", "feedback"
-		render expopts
 		await wait_for_event document.querySelector "#again_button"
 
 setup()

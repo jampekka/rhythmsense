@@ -20,4 +20,18 @@ get_worker = ->
 	#workerUrl = URL.createObjectURL workerBlob
 	new Worker 'dist/log_worker.js'
 
-module.exports = {get_logger}
+read_logs = ->
+	fs_root = await navigator.storage.getDirectory()
+	log_dir = await fs_root.getDirectoryHandle "rhythmsense_log"
+
+	for await [name, handle] from log_dir.entries()
+		file = await handle.getFile()
+		# TODO: Could be a lot faster
+		data = (await file.text()).split '\n'
+		rows = []
+		for line in data
+			continue if not line
+			rows.push JSON.parse line
+		yield [name, rows]
+
+module.exports = {get_logger, read_logs}

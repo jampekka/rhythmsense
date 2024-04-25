@@ -10,8 +10,6 @@ initialize = (msg) ->
 
 	self.postMessage "initialized"
 
-
-
 write_log_entry = (entry) ->
 	if not file_handle?
 		console.error "Got a log entry before the file was opened!"
