@@ -9,7 +9,9 @@
 	--beatBorderHitWidth: 1.5em;
 }
 
-
+body {
+	touch-action: manipulation;
+}
 
 #main_container {
 	width: 100%;

@@ -1,3 +1,5 @@
+# TODO: Something here doesn't work on Firefox
+
 get_logger = (session_id) ->
 	session_id ?= session_id = new Date() .toISOString()
 	
