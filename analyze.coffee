@@ -75,20 +75,29 @@ render_bpm_graph = (session) ->
 	plot = Plotly.react "bpm_graph", data, layout, config
 
 do ->
-	sessions = {}
+	sessions = []
 	
 	sessions_el = document.querySelector "#session_selector"
 	for await [name, log] from read_logs()
-		sessions[name] = get_session_data log
+		data = get_session_data log
+		continue if not data.trials.length
+		sessions.push [name, data]
+		
+	sessions.sort().reverse()
+	sessions = Object.fromEntries sessions
+	
+	for name of sessions
 		sessions_el.innerHTML += """
 		<option value="#{name}">#{name}</option>
 		"""
-	
+
+	console.log sessions
+
 	select_session = (name) ->
 		render_bpm_graph sessions[name]
 	
-	select_session Object.keys(sessions)[0]
 	
 	sessions_el.addEventListener "change", (ev) ->
 		select_session ev.target.value
+	select_session Object.keys(sessions)[0]
 
