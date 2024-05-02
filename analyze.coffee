@@ -1,7 +1,7 @@
 Plotly = require "plotly.js-dist"
 d3 = require 'd3'
 
-{read_logs} = require './logging.coffee'
+{read_logs, analyze_accuracy} = require './logging.coffee'
 
 
 get_session_data = (log_events) ->
@@ -42,13 +42,13 @@ render_bpm_graph = (session) ->
 		showlegend: false
 	
 	for trial in session.trials
-		beats = trial.hits
-		continue if beats.length < 2
-		durs = beats.map (v, i) -> 60/(v - beats[i-1]) - trial.bpm
-			
-		x = beats.slice(1).map (x) -> x - beats[0]
-		x = [1..x.length]
-		durs = durs.slice(1)
+		r = analyze_accuracy trial
+		continue if r.hit_bpm_errors < 2
+		#durs = beats.map (v, i) -> 60/(v - beats[i-1]) - trial.bpm
+		#
+		#
+		durs = r.hit_bpm_errors
+		x = [0..durs.length]
 		
 		s = 0.8
 		rolling = durs[0]
@@ -94,10 +94,8 @@ do ->
 		else
 			name = fname
 		sessions_el.innerHTML += """
-		<option value="#{name}">#{name}</option>
+		<option value="#{fname}">#{name}</option>
 		"""
-
-	console.log sessions
 
 	select_session = (name) ->
 		render_bpm_graph sessions[name]

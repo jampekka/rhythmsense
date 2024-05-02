@@ -27231,7 +27231,7 @@
   var require_logging = __commonJS({
     "logging.coffee"(exports, module) {
       (function() {
-        var get_logger, get_worker, read_logs;
+        var analyze_accuracy, get_logger, get_worker, read_logs;
         get_logger = async function(session_id) {
           var dir, file, worker;
           if (session_id == null) {
@@ -27254,7 +27254,7 @@
           return new Worker("dist/log_worker.js");
         };
         read_logs = async function* () {
-          var data, file, fs_root, handle, i, len, line, log_dir, name, ref, results, rows, x;
+          var data, file, fs_root, handle, j, len, line, log_dir, name, ref, results, rows, x;
           fs_root = await navigator.storage.getDirectory();
           log_dir = await fs_root.getDirectoryHandle("rhythmsense_log");
           ref = log_dir.entries();
@@ -27264,8 +27264,8 @@
             file = await handle.getFile();
             data = (await file.text()).split("\n");
             rows = [];
-            for (i = 0, len = data.length; i < len; i++) {
-              line = data[i];
+            for (j = 0, len = data.length; j < len; j++) {
+              line = data[j];
               if (!line) {
                 continue;
               }
@@ -27275,7 +27275,27 @@
           }
           return results;
         };
-        module.exports = { get_logger, read_logs };
+        analyze_accuracy = function(trial) {
+          var hits, r;
+          r = { ...trial };
+          hits = trial.hits;
+          r.hit_durations = hits.map(function(v, i) {
+            return v - hits[i - 1];
+          });
+          r.hit_bpms = r.hit_durations.map(function(v) {
+            return 60 / v;
+          });
+          r.hit_bpm_errors = r.hit_bpms.map(function(v) {
+            return v - trial.bpm;
+          });
+          r.hit_bpm_errors_abs = r.hit_bpm_errors.map(Math.abs);
+          r.hit_bpm_mad = r.hit_bpm_errors_abs.slice(1).reduce(function(acc, v) {
+            return acc + v / (r.hit_bpm_errors_abs.length - 1);
+          });
+          r.hit_bpm_score = 100 - r.hit_bpm_mad / trial.bpm * 100;
+          return r;
+        };
+        module.exports = { get_logger, read_logs, analyze_accuracy };
       }).call(exports);
     }
   });
@@ -27470,9 +27490,10 @@
             return this._playing = false;
           }
         };
-        run_trial = function({ bpm, samples, n_listening, n_muted, echos = [] }) {
+        run_trial = function(trial_spec) {
           return new Promise(function(resolve) {
-            var beat_interval, beats, context, controller, ctxlog, delay, echo, gain, hitter, i, len, metronome, onBeat, onHit, onkeydown, teardown;
+            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, i, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, samples, teardown;
+            ({ bpm, samples, n_listening, n_muted, echos = [] } = trial_spec);
             context = new AudioContext({
               latencyHint: 0
             });
@@ -27531,7 +27552,10 @@
               controller.abort();
               await playSample(context, samples.complete);
               context.close();
-              return resolve();
+              return resolve({
+                ...trial_spec,
+                hits: beats
+              });
             };
             onkeydown = function(ev) {
               if (ev.repeat) {
@@ -27561,7 +27585,7 @@
         };
         main_el = document.querySelector("#main_container");
         setup = async function() {
-          var bpm, btn, ctx, echos, expopts, n_listening, n_muted, name_el, results, rng, samples, trial_spec;
+          var analyzed, bpm, btn, ctx, echos, expopts, n_listening, n_muted, name_el, result, results, rng, samples, trial_spec;
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
@@ -27574,6 +27598,8 @@
           };
           n_listening = 10;
           n_muted = 30;
+          n_listening = 1;
+          n_muted = 3;
           expopts = {
             n_listening,
             n_muted,
@@ -27599,11 +27625,13 @@
             echos = [];
             trial_spec = { bpm, echos, ...expopts };
             log("trial_starting", trial_spec);
-            await run_trial({
+            result = await run_trial({
               samples,
               ...trial_spec
             });
             main_el.setAttribute("state", "feedback");
+            analyzed = logging.analyze_accuracy(result);
+            document.querySelector("#feedback_message").innerHTML = `Accuracy ${Math.round(analyzed.hit_bpm_score)}%`;
             results.push(await wait_for_event(document.querySelector("#again_button")));
           }
           return results;

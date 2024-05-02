@@ -178,7 +178,8 @@ class Metronome extends EventTarget
 		
 
 # TODO: Parametrize. Perhaps create a class
-run_trial = ({bpm, samples, n_listening, n_muted, echos=[]}) -> new Promise (resolve) ->
+run_trial = (trial_spec) -> new Promise (resolve) ->
+	{bpm, samples, n_listening, n_muted, echos=[]} = trial_spec
 	context = new AudioContext latencyHint: 0
 	ctxlog = (type, data={}) ->
 		log type, {audio_time: context.currentTime, data...}
@@ -242,7 +243,7 @@ run_trial = ({bpm, samples, n_listening, n_muted, echos=[]}) -> new Promise (res
 		await playSample context, samples.complete
 		
 		context.close()
-		resolve()
+		resolve {trial_spec..., hits: beats}
 	
 
 	onkeydown = (ev) ->
@@ -283,7 +284,7 @@ setup = () ->
 	n_muted = 30
 	
 	# Debug
-	#n_listening = 1; n_muted = 3
+	n_listening = 1; n_muted = 3
 	
 	expopts = {
 		n_listening
@@ -321,9 +322,12 @@ setup = () ->
 		}
 
 		log "trial_starting", trial_spec
-		await run_trial {samples: samples, trial_spec...}
+		result = await run_trial {samples: samples, trial_spec...}
 		
 		main_el.setAttribute "state", "feedback"
+		
+		analyzed = logging.analyze_accuracy result
+		document.querySelector("#feedback_message").innerHTML = "Accuracy #{Math.round analyzed.hit_bpm_score}%"
 		await wait_for_event document.querySelector "#again_button"
 
 setup()

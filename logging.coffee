@@ -1,5 +1,3 @@
-# TODO: Something here doesn't work on Firefox
-
 get_logger = (session_id) ->
 	session_id ?= session_id = new Date() .toISOString()
 	
@@ -36,4 +34,18 @@ read_logs = ->
 			rows.push JSON.parse line
 		yield [name, rows]
 
-module.exports = {get_logger, read_logs}
+# Maybe doesn't belong here
+analyze_accuracy = (trial) ->
+	r = {trial...}
+	hits = trial.hits
+	r.hit_durations = hits.map (v, i) -> (v - hits[i-1])
+	r.hit_bpms = r.hit_durations.map (v) -> 60/v
+	r.hit_bpm_errors = r.hit_bpms.map (v) -> v - trial.bpm
+	r.hit_bpm_errors_abs = r.hit_bpm_errors.map Math.abs
+	r.hit_bpm_mad = r.hit_bpm_errors_abs[1...].reduce (acc, v) ->
+		acc + v/(r.hit_bpm_errors_abs.length - 1)
+	r.hit_bpm_score = 100 - (r.hit_bpm_mad/trial.bpm)*100
+
+	return r
+
+module.exports = {get_logger, read_logs, analyze_accuracy}
