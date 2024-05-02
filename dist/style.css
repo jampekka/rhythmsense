@@ -11321,12 +11321,24 @@ body {
   align-items: center;
   justify-content: center;
   background-color: black;
-  color: white;
   margin: 0;
+}
+#instructions {
+  max-width: 50em;
 }
 #main_container > * {
   margin-top: 20px;
   display: none !important;
+}
+.button_container {
+  display: flex;
+  flex-direction: row;
+  white-space: nowrap;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+.flex_spacer {
+  flex-grow: 1;
 }
 #main_container[state=instruct] > #instructions {
   display: block !important;
