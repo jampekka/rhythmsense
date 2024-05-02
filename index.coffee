@@ -295,6 +295,10 @@ setup = () ->
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Start!"
 	await wait_for_event document.querySelector "#start_button"
+	
+	name_el = document.querySelector "#name_input"
+	log "experiment_start",
+		name: name_el.value
 	#render expopts
 	main_el.setAttribute "state", "play"
 	beatIndicator.innerHTML = "Tap to the beat"

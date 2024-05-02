@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="dist/style.css">
 </head>
-<body id="main_container" state="instruct">
+<body id="main_container" state="instruct" data-bs-theme="dark">
 	<div id="instructions">
 		<h1 id="instruction">Keep the Rhythm</h1>
 		<p>[Instructions etc here]</p>
-		<button id="start_button">Loading...</button>
+		<div>
+		<input type="text" id="name_input" class="form-control form-control-lg" placeholder="Name (optional)" >
+		</div>
+		<div class="button_container">
+		<button id="start_button" class="btn btn-success">Loading...</button>
+		</div>
 	</div>
 	<div id="beatindicatorcontainer">
 		<div id="beatindicator"></div>

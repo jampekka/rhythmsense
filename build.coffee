@@ -4,7 +4,7 @@ esbuild = require 'esbuild'
 
 context = () ->
 	ctx = await esbuild.context
-		entryPoints: ['index.coffee', 'analyze.coffee', 'log_worker.coffee']
+		entryPoints: ['index.coffee', 'analyze.coffee', 'log_worker.coffee', 'style.scss']
 		outdir: 'dist'
 		sourcemap: true
 		bundle: true

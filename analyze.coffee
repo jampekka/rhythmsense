@@ -8,6 +8,8 @@ get_session_data = (log_events) ->
 	session =
 		trials: []
 	for row in log_events
+		if row.type == "experiment_start"
+			session.name = row.name
 		if row.type == "trial_starting"
 			trial = {
 				row...,
@@ -86,7 +88,11 @@ do ->
 	sessions.sort().reverse()
 	sessions = Object.fromEntries sessions
 	
-	for name of sessions
+	for fname, session of sessions
+		if session.name
+			name = "#{session.name} #{fname}"
+		else
+			name = fname
 		sessions_el.innerHTML += """
 		<option value="#{name}">#{name}</option>
 		"""
