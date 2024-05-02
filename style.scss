@@ -1,0 +1,123 @@
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+:root {
+	--beatRingColor: white;
+	--beatRingHitColor: red;
+
+	--beatBgColor: white;
+	--beatBgHitColor: var(--beatRingHitColor);
+
+	--beatBorderWidth: 1.5em;
+	--beatBorderHitWidth: 1.5em;
+}
+
+body {
+	touch-action: manipulation;
+}
+
+#main_container {
+	width: 100%;
+	height: 100%;
+	position: fixed;
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background-color: black;
+	//color: white;
+	margin: 0;
+}
+
+#instructions {
+  max-width: 50em;
+}
+
+#main_container > * {
+	margin-top: 20px;
+	display: none !important;
+}
+
+.button_container {
+  display: flex;
+  flex-direction: row;
+  white-space: nowrap;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+/*button {
+	font-size: 2em;
+	font-weight: bold;
+	padding: 0.3em;
+	border-radius: 0.3em;
+	border: none;
+}*/
+
+.flex_spacer {
+  flex-grow: 1;
+}
+
+#main_container[state="instruct"] > #instructions {
+	display: block !important;
+	text-align: center;
+}
+
+#main_container[state="play"] > #beatindicatorcontainer {
+	display: flex !important;
+}
+
+#main_container[state="feedback"] > #feedback_container {
+	display: block !important;
+}
+
+#beatindicatorcontainer {
+	height: 22em;
+	width: 22em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#beatindicator {
+	aspect-ratio: 1/1;
+	/*box-sizing: border-box;*/
+	
+	outline: 2px solid #00000020;
+	outline-offset: calc(var(--beatBorderWidth)*-1);
+
+	font-weight: bold;
+	text-transform: uppercase;
+
+	/*width: 20em;
+	height: 20em;*/
+	height: 80%;
+	
+	margin: 0;
+	border: var(--beatBorderWidth) solid var(--beatRingColor);
+	border-radius: 50%;
+	
+	background-color: var(--beatBgColor);
+	color: black;
+
+
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+#beatindicator {
+	user-select: none;
+}
+
+#feedback_container {
+	width: 100%;
+	text-align: center;
+}
+
+#plot_container {
+	/* TODO: Make the height scalable */
+	height: 300px;
+	/*text-align: unset;*/
+}
