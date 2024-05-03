@@ -27304,7 +27304,7 @@
   var require_rhythmsense = __commonJS({
     "index.coffee"(exports) {
       (async function() {
-        var $, Metronome, STOP, animTiming, audioInterval, beatIndicator, easeInOffset, get_sessions, hitAnim, listen, load_sample, lobos, log, log_events, logger, logging, main_el, metronomeAnim, playSample, run_trial, setup, wait_for_event;
+        var $, Metronome, STOP, animTiming, audioInterval, beatIndicator, easeInOffset, get_sessions, hitAnim, listen, load_sample, lobos, log, log_events, logger, logging, main_el, metronomeAnim, playSample, run_trial, setup, shuffleArray, wait_for_event;
         $ = require_jquery();
         lobos = require_lobos();
         logging = require_logging();
@@ -27321,7 +27321,6 @@
           logger(data);
           return log_events.push(data);
         };
-        log("session_start", {});
         load_sample = async function(ctx, url) {
           var buf;
           buf = await fetch(url);
@@ -27331,10 +27330,10 @@
           return buf;
         };
         get_sessions = function() {
-          var i, len, row, session, sessions;
+          var k, len, row, session, sessions;
           sessions = [];
-          for (i = 0, len = log_events.length; i < len; i++) {
-            row = log_events[i];
+          for (k = 0, len = log_events.length; k < len; k++) {
+            row = log_events[k];
             if (row.type === "trialstart") {
               session = {
                 bpm: row.bpm,
@@ -27492,7 +27491,7 @@
         };
         run_trial = function(trial_spec) {
           return new Promise(function(resolve) {
-            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, i, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, samples, teardown;
+            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, k, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, samples, teardown;
             ({ bpm, samples, n_listening, n_muted, echos = [] } = trial_spec);
             context = new AudioContext({
               latencyHint: 0
@@ -27524,8 +27523,8 @@
             });
             hitter = context.createGain();
             hitter.connect(context.destination);
-            for (i = 0, len = echos.length; i < len; i++) {
-              echo = echos[i];
+            for (k = 0, len = echos.length; k < len; k++) {
+              echo = echos[k];
               echo = 1 / (echo / 60);
               delay = context.createDelay(echo * 2);
               delay.delayTime.value = echo;
@@ -27583,9 +27582,19 @@
             });
           });
         };
+        shuffleArray = function(array) {
+          var _, i, j, k, len, results;
+          results = [];
+          for (i = k = 0, len = array.length; k < len; i = ++k) {
+            _ = array[i];
+            j = Math.floor(Math.random() * (i + 1));
+            results.push([array[i], array[j]] = [array[j], array[i]]);
+          }
+          return results;
+        };
         main_el = document.querySelector("#main_container");
         setup = async function() {
-          var analyzed, bpm, btn, ctx, echos, expopts, n_listening, n_muted, name_el, result, results, rng, samples, trial_spec;
+          var analyzed, base, btn, ctx, echo, expopts, fixed_bpms, fixed_echo_trials, fixed_echos, i, intro_trials, k, l, len, len1, len2, m, n_listening, n_muted, name_el, no_echo_trials, randomized_trials, repetitions, result, samples, trial_number, trial_spec, trials;
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
@@ -27596,16 +27605,42 @@
             hit: await load_sample(ctx, "hit.mono.wav"),
             complete: await load_sample(ctx, "complete.oga")
           };
-          n_listening = 10;
-          n_muted = 30;
-          n_listening = 1;
-          n_muted = 3;
+          n_listening = 8;
+          n_muted = 16;
+          repetitions = 2;
           expopts = {
             n_listening,
             n_muted,
             min_bpm: 50,
             max_bpm: 150
           };
+          fixed_bpms = [100, 70, 130];
+          fixed_echos = fixed_bpms.map(function(v) {
+            return v * 2;
+          });
+          no_echo_trials = fixed_bpms.map(function(v) {
+            return {
+              bpm: v,
+              echos: []
+            };
+          });
+          intro_trials = no_echo_trials;
+          no_echo_trials = Array(repetitions).fill(no_echo_trials).flat();
+          fixed_echo_trials = [];
+          for (k = 0, len = fixed_bpms.length; k < len; k++) {
+            base = fixed_bpms[k];
+            for (l = 0, len1 = fixed_echos.length; l < len1; l++) {
+              echo = fixed_echos[l];
+              fixed_echo_trials.push({
+                bpm: base,
+                echos: [echo]
+              });
+            }
+          }
+          fixed_echo_trials = Array(repetitions).fill(fixed_echo_trials).flat();
+          randomized_trials = [...no_echo_trials, ...fixed_echo_trials];
+          shuffleArray(randomized_trials);
+          trials = [...intro_trials, ...randomized_trials];
           btn = document.querySelector("#start_button");
           btn.innerHTML = "Start!";
           await wait_for_event(document.querySelector("#start_button"));
@@ -27615,15 +27650,12 @@
           });
           main_el.setAttribute("state", "play");
           beatIndicator.innerHTML = "Tap to the beat";
-          rng = new lobos.Sobol(1);
-          rng.next;
-          results = [];
-          while (true) {
+          trial_number = 1;
+          for (i = m = 0, len2 = trials.length; m < len2; i = ++m) {
+            trial_spec = trials[i];
             main_el.setAttribute("state", "play");
-            beatIndicator.innerHTML = "Beat to the rhythm";
-            bpm = rng.next * (expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm;
-            echos = [];
-            trial_spec = { bpm, echos, ...expopts };
+            beatIndicator.innerHTML = "Tap to the rhythm";
+            trial_spec = { ...trial_spec, ...expopts };
             log("trial_starting", trial_spec);
             result = await run_trial({
               samples,
@@ -27631,10 +27663,11 @@
             });
             main_el.setAttribute("state", "feedback");
             analyzed = logging.analyze_accuracy(result);
-            document.querySelector("#feedback_message").innerHTML = `Accuracy ${Math.round(analyzed.hit_bpm_score)}%`;
-            results.push(await wait_for_event(document.querySelector("#again_button")));
+            document.querySelector("#feedback_message").innerHTML = `<p>Trial ${i + 1} of ${trials.length}</p>
+<p>Accuracy ${Math.round(analyzed.hit_bpm_score)}%</p>`;
+            await wait_for_event(document.querySelector("#again_button"));
           }
-          return results;
+          return main_el.setAttribute("state", "end");
         };
         setup();
       }).call(exports);

@@ -71,6 +71,10 @@ body {
 	display: block !important;
 }
 
+#main_container[state="end"] > #end_container {
+	display: block !important;
+}
+
 #beatindicatorcontainer {
 	height: 22em;
 	width: 22em;

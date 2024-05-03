@@ -7,8 +7,9 @@
 	<div id="instructions">
 		<h1 id="instruction">Keep the Rhythm</h1>
 		<p><b>Your task is to keep a steady rhythm.</b></p>
-		<p> You will first hear a steady metronome beat to follow. Get to the rhytm and start tapping in it.</p>
+		<p> You will first hear a steady metronome beat to follow. Get to the rhythm and start tapping in it.</p>
 		<p>The metronome will stop at some point. Keep tapping until you hear a bell.</p>
+		<p>Sometimes you will hear an echo of your tap. Try to keep the rhythm regardless.</p>
 		<div>
 		<input type="text" id="name_input" class="form-control form-control-lg" placeholder="Name (optional)" >
 		</div>
@@ -23,7 +24,12 @@
 	<div id="feedback_container">
 		<h1>Great!</h1>
 		<div id="feedback_message"></div>
-		<button id="again_button" class="btn btn-success">Go again!</button>
+		<button id="again_button" class="btn btn-success">Next</button>
+		<a id="view_data_button" href="analyze.html" target="_blank">View data</a>
+	</div>
+	<div id="end_container">
+		<h1>All done!</h1>
+		<div>Thank you for participating.</div>
 		<a id="view_data_button" href="analyze.html" target="_blank">View data</a>
 	</div>
 	<script src="dist/index.js"></script>

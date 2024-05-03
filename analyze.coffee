@@ -44,9 +44,8 @@ render_bpm_graph = (session) ->
 	for trial in session.trials
 		r = analyze_accuracy trial
 		continue if r.hit_bpm_errors < 2
-		#durs = beats.map (v, i) -> 60/(v - beats[i-1]) - trial.bpm
-		#
-		#
+		
+		#durs = r.hit_bpms
 		durs = r.hit_bpm_errors
 		x = [0..durs.length]
 		

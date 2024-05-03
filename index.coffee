@@ -17,7 +17,7 @@ log = (type, data) ->
 	logger data
 
 	log_events.push data
-log "session_start", {}
+#log "session_start", {}
 
 load_sample = (ctx, url) ->
 	buf = await fetch url
@@ -261,6 +261,10 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 wait_for_event = (el=document, ev="click") -> new Promise (resolve) ->
 	el.addEventListener ev, resolve, once: true
 
+shuffleArray = (array) ->
+	for _, i in array
+		j = Math.floor(Math.random() * (i + 1))
+		[array[i], array[j]] = [array[j], array[i]]
 
 
 main_el = document.querySelector "#main_container"
@@ -280,11 +284,15 @@ setup = () ->
 		hit: await load_sample ctx, 'hit.mono.wav'
 		complete: await load_sample ctx, 'complete.oga'
 	
-	n_listening = 10
-	n_muted = 30
+	#n_listening = 10
+	#n_muted = 30
 	
+	n_listening = 8
+	n_muted = 16
+	repetitions = 2
+
 	# Debug
-	#n_listening = 1; n_muted = 3
+	#n_listening = 1; n_muted = 3; repetitions = 1
 	
 	expopts = {
 		n_listening
@@ -292,7 +300,28 @@ setup = () ->
 		min_bpm: 50
 		max_bpm: 150
 	}
+	
 
+	fixed_bpms = [100, 70, 130]
+	fixed_echos = fixed_bpms.map (v) -> v*2
+	
+	no_echo_trials = fixed_bpms.map (v) -> bpm: v, echos: []
+	intro_trials = no_echo_trials
+	no_echo_trials = Array(repetitions).fill(no_echo_trials).flat()
+
+	fixed_echo_trials = []
+	for base in fixed_bpms
+		for echo in fixed_echos
+			fixed_echo_trials.push bpm: base, echos: [echo]
+	
+
+	fixed_echo_trials = Array(repetitions).fill(fixed_echo_trials).flat()
+	
+	randomized_trials = [no_echo_trials..., fixed_echo_trials...]
+	shuffleArray randomized_trials
+
+	trials = [intro_trials..., randomized_trials...]
+	
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Start!"
 	await wait_for_event document.querySelector "#start_button"
@@ -305,19 +334,20 @@ setup = () ->
 	beatIndicator.innerHTML = "Tap to the beat"
 	
 
-	rng = new lobos.Sobol 1
-	rng.next # Skip the first 0
-	while true
+
+	#rng = new lobos.Sobol 1
+	#rng.next # Skip the first 0
+	trial_number = 1
+	for trial_spec, i in trials
 		main_el.setAttribute "state", "play"
 		
 		#TODO: bi.innerHTML = "Get ready to tap"
 		#TODO: Tap to the beat
-		beatIndicator.innerHTML = "Beat to the rhythm"
-		bpm = rng.next*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
-		echos = []
+		beatIndicator.innerHTML = "Tap to the rhythm"
+		#bpm = rng.next*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
+		#echos = [bpm*0.7]
 		trial_spec = {
-			bpm
-			echos
+			trial_spec...
 			expopts...
 		}
 
@@ -327,7 +357,11 @@ setup = () ->
 		main_el.setAttribute "state", "feedback"
 		
 		analyzed = logging.analyze_accuracy result
-		document.querySelector("#feedback_message").innerHTML = "Accuracy #{Math.round analyzed.hit_bpm_score}%"
+		document.querySelector("#feedback_message").innerHTML = """
+			<p>Trial #{i+1} of #{trials.length}</p>
+			<p>Accuracy #{Math.round analyzed.hit_bpm_score}%</p>
+			"""
 		await wait_for_event document.querySelector "#again_button"
+	main_el.setAttribute "state", "end"
 
 setup()
