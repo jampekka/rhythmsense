@@ -67,13 +67,45 @@ render_bpm_graph = (session) ->
 		#showlegend: false
 		autosize: true
 		xaxis:
-			text: "Beat number"
+			title: "Beat number"
 		yaxis:
-			text: "BPM error"
+			title: "BPM error"
 	config = responsive: true
 	# TODO: This currently overflows the legend and the axis texts.
 	# don't know why.
 	plot = Plotly.react "bpm_graph", data, layout, config
+
+render_error_graph = (session) ->
+	{n_listening, n_muted, min_bpm, max_bpm} = session.trials[0]
+	bpms = []
+	errors = []
+	echos = []
+	for trial in session.trials
+		r = analyze_accuracy trial
+		bpms.push trial.bpm
+		errors.push r.hit_bpm_mean_error
+		echo = trial.echos[0]
+		echos.push (trial.echos[0] ? 0)/trial.bpm
+	
+	console.log bpms
+	console.log errors
+	data = [
+		x: echos
+		y: errors
+		type: "scatter"
+		mode: "markers"
+		marker:
+			color: bpms
+	]
+	config = responsive: true
+	layout =
+		autosize: true
+		xaxis:
+			title: "Echo to BPM ratio"
+		yaxis:
+			title: "Mean BPM error"
+
+	Plotly.react "error_graph", data, layout, config
 
 do ->
 	sessions = []
@@ -98,6 +130,7 @@ do ->
 
 	select_session = (name) ->
 		render_bpm_graph sessions[name]
+		render_error_graph sessions[name]
 	
 	
 	sessions_el.addEventListener "change", (ev) ->

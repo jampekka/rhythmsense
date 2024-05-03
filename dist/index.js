@@ -27276,9 +27276,10 @@
           return results;
         };
         analyze_accuracy = function(trial) {
-          var hits, r;
+          var hits, n_valid, r;
           r = { ...trial };
           hits = trial.hits;
+          n_valid = hits.length - 1;
           r.hit_durations = hits.map(function(v, i) {
             return v - hits[i - 1];
           });
@@ -27290,9 +27291,12 @@
           });
           r.hit_bpm_errors_abs = r.hit_bpm_errors.map(Math.abs);
           r.hit_bpm_mad = r.hit_bpm_errors_abs.slice(1).reduce(function(acc, v) {
-            return acc + v / (r.hit_bpm_errors_abs.length - 1);
+            return acc + v / n_valid;
           });
           r.hit_bpm_score = 100 - r.hit_bpm_mad / trial.bpm * 100;
+          r.hit_bpm_mean_error = r.hit_bpm_errors.slice(1).reduce(function(acc, v) {
+            return acc + v / n_valid;
+          });
           return r;
         };
         module.exports = { get_logger, read_logs, analyze_accuracy };

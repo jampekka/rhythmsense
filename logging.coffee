@@ -38,13 +38,16 @@ read_logs = ->
 analyze_accuracy = (trial) ->
 	r = {trial...}
 	hits = trial.hits
+	n_valid = (hits.length - 1)
+	
 	r.hit_durations = hits.map (v, i) -> (v - hits[i-1])
 	r.hit_bpms = r.hit_durations.map (v) -> 60/v
 	r.hit_bpm_errors = r.hit_bpms.map (v) -> v - trial.bpm
 	r.hit_bpm_errors_abs = r.hit_bpm_errors.map Math.abs
 	r.hit_bpm_mad = r.hit_bpm_errors_abs[1...].reduce (acc, v) ->
-		acc + v/(r.hit_bpm_errors_abs.length - 1)
+		acc + v/n_valid
 	r.hit_bpm_score = 100 - (r.hit_bpm_mad/trial.bpm)*100
+	r.hit_bpm_mean_error = r.hit_bpm_errors[1...].reduce (acc, v) -> acc + v/n_valid
 
 	return r
 
