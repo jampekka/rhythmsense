@@ -195,9 +195,9 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 		#return if not metronomeOn
 		ctxlog "tickscheduled", scheduled_at: time
 		timeToEvent = time - context.currentTime
-		timing = {delay: timeToEvent*1000, animTiming...}
-		beatIndicator.animate metronomeAnim, timing
-		#metronome.start time
+		
+		#timing = {delay: timeToEvent*1000, animTiming...}
+		#beatIndicator.animate metronomeAnim, timing
 	metronome.addEventListener "tickscheduled", (ev) -> onBeat ev.detail.at
 
 	hitter = context.createGain()
