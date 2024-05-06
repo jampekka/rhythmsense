@@ -112,7 +112,26 @@ render_error_graph = (session) ->
 
 	Plotly.newPlot "error_graph", data, layout, config
 
+zip = require "@zip.js/zip.js"
+saveFile = (filename, blob) ->
+	element = document.createElement("a")
+	url = URL.createObjectURL blob
+	element.setAttribute "href", url
+	element.setAttribute "download", filename
+	element.click()
+	URL.revokeObjectURL(url)
+
+download_opfs = ->
+	fs_root = await navigator.storage.getDirectory()
+	zipFs = new zip.fs.FS()
+	await zipFs.root.addFileSystemHandle fs_root
+	blob = await zipFs.exportBlob()
+	saveFile "rhythmsense.zip", blob
+
 do ->
+	document.querySelector "#download_all"
+		.addEventListener 'click', download_opfs
+
 	sessions = []
 	
 	sessions_el = document.querySelector "#session_selector"
