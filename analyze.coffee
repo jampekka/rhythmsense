@@ -1,5 +1,6 @@
 Plotly = require "plotly.js-dist"
 d3 = require 'd3'
+mj = require 'mathjs'
 
 {read_logs, analyze_accuracy} = require './logging.coffee'
 
@@ -73,7 +74,7 @@ render_bpm_graph = (session) ->
 	config = responsive: true
 	# TODO: This currently overflows the legend and the axis texts.
 	# don't know why.
-	plot = Plotly.react "bpm_graph", data, layout, config
+	Plotly.newPlot "bpm_graph", data, layout, config
 
 render_error_graph = (session) ->
 	{n_listening, n_muted, min_bpm, max_bpm} = session.trials[0]
@@ -81,14 +82,18 @@ render_error_graph = (session) ->
 	errors = []
 	echos = []
 	for trial in session.trials
+		continue if trial.bpm != 70
 		r = analyze_accuracy trial
 		bpms.push trial.bpm
-		errors.push r.hit_bpm_mean_error
+		silent = r.hit_bpms.slice(r.n_listening + 1)
+		silent_mean_error = mj.evaluate "mean(silent - bpm)", {silent, bpm: trial.bpm}
+		
+		#console.log silent_mad, silent, trial.bpm
+		#errors.push silent_mad
+		errors.push silent_mean_error
 		echo = trial.echos[0]
 		echos.push (trial.echos[0] ? 0)/trial.bpm
 	
-	console.log bpms
-	console.log errors
 	data = [
 		x: echos
 		y: errors
@@ -105,7 +110,7 @@ render_error_graph = (session) ->
 		yaxis:
 			title: "Mean BPM error"
 
-	Plotly.react "error_graph", data, layout, config
+	Plotly.newPlot "error_graph", data, layout, config
 
 do ->
 	sessions = []
@@ -129,11 +134,18 @@ do ->
 		"""
 
 	select_session = (name) ->
-		render_bpm_graph sessions[name]
-		render_error_graph sessions[name]
+		sessions_el.value = name
+		url = new URL window.location.href
+		url.searchParams.set 'session', name
+		history.replaceState null, "", url
+		session = sessions[name]
+		await render_bpm_graph session
+		await render_error_graph session
 	
 	
 	sessions_el.addEventListener "change", (ev) ->
 		select_session ev.target.value
-	select_session Object.keys(sessions)[0]
+	
+	session = new URL(window.location.href).searchParams.get('session') ? Object.keys(sessions)[0]
+	select_session session
 

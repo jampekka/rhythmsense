@@ -27278,7 +27278,7 @@
         analyze_accuracy = function(trial) {
           var hits, n_valid, r;
           r = { ...trial };
-          hits = trial.hits;
+          hits = [...trial.hits];
           n_valid = hits.length - 1;
           r.hit_durations = hits.map(function(v, i) {
             return v - hits[i - 1];
@@ -27511,16 +27511,11 @@
             metronome = new Metronome(context, samples.click, beat_interval);
             metronome.output.connect(context.destination);
             onBeat = function(time) {
-              var timeToEvent, timing;
+              var timeToEvent;
               ctxlog("tickscheduled", {
                 scheduled_at: time
               });
-              timeToEvent = time - context.currentTime;
-              timing = {
-                delay: timeToEvent * 1e3,
-                ...animTiming
-              };
-              return beatIndicator.animate(metronomeAnim, timing);
+              return timeToEvent = time - context.currentTime;
             };
             metronome.addEventListener("tickscheduled", function(ev) {
               return onBeat(ev.detail.at);

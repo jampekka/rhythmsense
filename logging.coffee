@@ -37,7 +37,7 @@ read_logs = ->
 # Maybe doesn't belong here
 analyze_accuracy = (trial) ->
 	r = {trial...}
-	hits = trial.hits
+	hits = [trial.hits...]
 	n_valid = (hits.length - 1)
 	
 	r.hit_durations = hits.map (v, i) -> (v - hits[i-1])
