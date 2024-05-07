@@ -27593,7 +27593,7 @@
         };
         main_el = document.querySelector("#main_container");
         setup = async function() {
-          var analyzed, base, btn, ctx, echo, expopts, fixed_bpms, fixed_echo_trials, fixed_echos, i, intro_trials, k, l, len, len1, len2, m, n_listening, n_muted, name_el, no_echo_trials, randomized_trials, repetitions, result, samples, trial_number, trial_spec, trials;
+          var analyzed, base, btn, ctx, distances, echo, echo_at_distance, expopts, fixed_bpms, fixed_echo_trials, fixed_echos, i, intro_trials, k, l, len, len1, len2, m, n_listening, n_muted, name_el, no_echo_trials, randomized_trials, repetitions, result, samples, speed_of_sound, trial_number, trial_spec, trials;
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
@@ -27613,10 +27613,20 @@
             min_bpm: 50,
             max_bpm: 150
           };
-          fixed_bpms = [100, 70, 130];
+          speed_of_sound = 340;
+          distances = [30, 40, 60];
+          echo_at_distance = function(d) {
+            return d * 2 / speed_of_sound;
+          };
+          fixed_bpms = distances.map(function(d) {
+            var echo_delay;
+            echo_delay = echo_at_distance(d);
+            return 60 / echo_delay / 2;
+          });
           fixed_echos = fixed_bpms.map(function(v) {
             return v * 2;
           });
+          console.log({ fixed_bpms, fixed_echos });
           no_echo_trials = fixed_bpms.map(function(v) {
             return {
               bpm: v,

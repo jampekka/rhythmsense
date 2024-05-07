@@ -301,10 +301,20 @@ setup = () ->
 		max_bpm: 150
 	}
 	
+	speed_of_sound = 340
+	distances = [30, 40, 60]
+	echo_at_distance = (d) ->
+		d*2/speed_of_sound
 
-	fixed_bpms = [100, 70, 130]
+	fixed_bpms = distances.map (d) ->
+		#echo_delay = d*2/speed_of_sound
+		echo_delay = echo_at_distance d
+		return 60/echo_delay/2
+	#fixed_bpms = [100, 70, 130]
 	fixed_echos = fixed_bpms.map (v) -> v*2
-	
+	#fixed_echo_coeffs = [1, 
+	console.log {fixed_bpms, fixed_echos}
+
 	no_echo_trials = fixed_bpms.map (v) -> bpm: v, echos: []
 	intro_trials = no_echo_trials
 	no_echo_trials = Array(repetitions).fill(no_echo_trials).flat()
