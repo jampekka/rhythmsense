@@ -11309,8 +11309,8 @@ fieldset:disabled .btn {
   --beatBorderWidth: 1.5em;
   --beatBorderHitWidth: 1.5em;
 }
-body {
-  touch-action: manipulation;
+* {
+  touch-action: none;
 }
 #main_container {
   width: 100%;

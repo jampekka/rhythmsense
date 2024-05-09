@@ -11,8 +11,8 @@
 	--beatBorderHitWidth: 1.5em;
 }
 
-body {
-	touch-action: manipulation;
+* {
+	touch-action: none;
 }
 
 #main_container {

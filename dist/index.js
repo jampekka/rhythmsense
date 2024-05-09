@@ -39435,7 +39435,6 @@
         playSample = function(ctx, sample, output) {
           return new Promise(function(accept) {
             var source;
-            console.log("Playing sample");
             source = ctx.createBufferSource();
             source.buffer = sample;
             source.addEventListener("ended", accept);
