@@ -3,7 +3,7 @@ get_logger = (session_id) ->
 	
 	dir = "rhythmsense_log"
 	file = session_id + ".jsons"
-
+	
 	worker = get_worker()
 	worker.postMessage {dir, file}
 
@@ -22,8 +22,7 @@ get_worker = ->
 
 read_logs = ->
 	fs_root = await navigator.storage.getDirectory()
-	log_dir = await fs_root.getDirectoryHandle "rhythmsense_log"
-
+	log_dir = await fs_root.getDirectoryHandle "rhythmsense_log", create: true
 	for await [name, handle] from log_dir.entries()
 		file = await handle.getFile()
 		# TODO: Could be a lot faster
@@ -32,6 +31,7 @@ read_logs = ->
 		for line in data
 			continue if not line
 			rows.push JSON.parse line
+		console.log [name, rows]
 		yield [name, rows]
 
 # Maybe doesn't belong here

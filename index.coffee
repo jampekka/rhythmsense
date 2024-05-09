@@ -1,6 +1,9 @@
 $ = require 'jquery'
 lobos = require 'lobos'
 
+{AudioContext} = require 'standardized-audio-context'
+
+
 logging = require './logging.coffee'
 
 log_events = []
@@ -181,6 +184,7 @@ class Metronome extends EventTarget
 run_trial = (trial_spec) -> new Promise (resolve) ->
 	{bpm, samples, n_listening, n_muted, echos=[]} = trial_spec
 	context = new AudioContext latencyHint: 0
+	
 	ctxlog = (type, data={}) ->
 		log type, {audio_time: context.currentTime, data...}
 	
@@ -212,7 +216,7 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 		delay = context.createDelay echo*2
 		delay.delayTime.value = echo
 		gain = context.createGain()
-		gain.gain.value = 0.5
+		gain.gain.value = 0.3
 		hitter
 			.connect delay
 			.connect gain
@@ -270,9 +274,9 @@ shuffleArray = (array) ->
 main_el = document.querySelector "#main_container"
 
 setup = () ->
-
 	# Create a context to load the samples. This can be
 	# done without user interaction
+	
 	ctx = new AudioContext()
 	ctx.suspend()
 
@@ -282,8 +286,8 @@ setup = () ->
 		# stereo. Probably related to:
 		# https://github.com/WebAudio/web-audio-api/issues/1719
 		hit: await load_sample ctx, 'hit.mono.wav'
-		complete: await load_sample ctx, 'complete.oga'
-	
+		complete: await load_sample ctx, 'complete.flac'
+	await ctx.close()
 	#n_listening = 10
 	#n_muted = 30
 	
@@ -301,6 +305,7 @@ setup = () ->
 		max_bpm: 150
 	}
 	
+	gap_width = 120
 	speed_of_sound = 340
 	distances = [30, 40, 60]
 	echo_at_distance = (d) ->
@@ -320,9 +325,12 @@ setup = () ->
 	no_echo_trials = Array(repetitions).fill(no_echo_trials).flat()
 
 	fixed_echo_trials = []
-	for base in fixed_bpms
-		for echo in fixed_echos
-			fixed_echo_trials.push bpm: base, echos: [echo]
+	for base, i in fixed_bpms
+		for d in [-5, 0, 5]
+			dist = distances[i] + d
+			echo0 = 60/echo_at_distance(dist)
+			echo1 = 60/echo_at_distance(gap_width - dist)
+			fixed_echo_trials.push bpm: base, echos: [echo0, echo1], distance: dist
 	
 
 	fixed_echo_trials = Array(repetitions).fill(fixed_echo_trials).flat()
@@ -331,7 +339,7 @@ setup = () ->
 	shuffleArray randomized_trials
 
 	trials = [intro_trials..., randomized_trials...]
-	
+
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Start!"
 	await wait_for_event document.querySelector "#start_button"

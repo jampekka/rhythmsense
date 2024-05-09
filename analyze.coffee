@@ -4,7 +4,6 @@ mj = require 'mathjs'
 
 {read_logs, analyze_accuracy} = require './logging.coffee'
 
-
 get_session_data = (log_events) ->
 	session =
 		trials: []
