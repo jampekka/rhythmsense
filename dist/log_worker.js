@@ -33,8 +33,7 @@
           entry = JSON.stringify(entry) + "\n";
           entry = new TextEncoder().encode(entry);
           file_handle.write(entry);
-          file_handle.flush();
-          return console.log("Wrote log");
+          return file_handle.flush();
         };
         addEventListener("message", initialize, {
           once: true

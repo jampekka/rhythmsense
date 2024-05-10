@@ -226,6 +226,8 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 	metronome.start()
 	controller = new AbortController()
 	onHit = (ev) ->
+		# TODO: Debounce hits. At least iOS likes to do a lot of these.
+		# log also relevant info about the event
 		ctxlog "hit", ev
 		playSample context, samples.hit, hitter
 		
@@ -258,6 +260,7 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 	document.addEventListener "keydown", onkeydown,
 		signal: controller.signal
 		useCapture: true
+	
 	document.addEventListener "pointerdown", onHit,
 		signal: controller.signal
 		useCapture: true
@@ -266,10 +269,11 @@ wait_for_event = (el=document, ev="click") -> new Promise (resolve) ->
 	el.addEventListener ev, resolve, once: true
 
 shuffleArray = (array) ->
+	array = array.slice()
 	for _, i in array
 		j = Math.floor(Math.random() * (i + 1))
 		[array[i], array[j]] = [array[j], array[i]]
-
+	return array
 
 main_el = document.querySelector "#main_container"
 
@@ -291,9 +295,8 @@ setup = () ->
 	#n_listening = 10
 	#n_muted = 30
 	
-	n_listening = 8
-	n_muted = 16
-	repetitions = 2
+	n_listening = 10
+	n_muted = 20
 
 	# Debug
 	#n_listening = 1; n_muted = 3; repetitions = 1
@@ -311,34 +314,51 @@ setup = () ->
 	echo_at_distance = (d) ->
 		d*2/speed_of_sound
 
-	fixed_bpms = distances.map (d) ->
-		#echo_delay = d*2/speed_of_sound
-		echo_delay = echo_at_distance d
-		return 60/echo_delay/2
-	#fixed_bpms = [100, 70, 130]
-	fixed_echos = fixed_bpms.map (v) -> v*2
-	#fixed_echo_coeffs = [1, 
-	console.log {fixed_bpms, fixed_echos}
+	#fixed_bpms = distances.map (d) ->
+	#	#echo_delay = d*2/speed_of_sound
+	#	echo_delay = echo_at_distance d
+	#	return 60/echo_delay/2
+	
+	fixed_bpms = [70, 100, 130]
+	#fixed_echos = fixed_bpms.map (v) -> v*2
 
 	no_echo_trials = fixed_bpms.map (v) -> bpm: v, echos: []
 	intro_trials = no_echo_trials
-	no_echo_trials = Array(repetitions).fill(no_echo_trials).flat()
-
-	fixed_echo_trials = []
-	for base, i in fixed_bpms
-		for d in [-5, 0, 5]
-			dist = distances[i] + d
-			echo0 = 60/echo_at_distance(dist)
-			echo1 = 60/echo_at_distance(gap_width - dist)
-			fixed_echo_trials.push bpm: base, echos: [echo0, echo1], distance: dist
 	
 
-	fixed_echo_trials = Array(repetitions).fill(fixed_echo_trials).flat()
+	#no_echo_trials = Array(repetitions).fill(no_echo_trials).flat()
+	good_echo_multipliers = [1.0, 2.0]
+	bad_echo_multipliers = [0.9, 1.1, 1.9, 2.1]
 	
-	randomized_trials = [no_echo_trials..., fixed_echo_trials...]
-	shuffleArray randomized_trials
+	good_echo_trials = []
+	for bpm, i in fixed_bpms
+		for m in good_echo_multipliers
+			echo = bpm*m
+			good_echo_trials.push bpm: bpm, echos: [echo]
+	
+	bad_echo_trials = []
+	for bpm, i in fixed_bpms
+		for m in bad_echo_multipliers
+			echo = bpm*m
+			bad_echo_trials.push bpm: bpm, echos: [echo]
+	
+	# TODO: Randomly sampled trials!
 
-	trials = [intro_trials..., randomized_trials...]
+	trial_block = [
+		no_echo_trials...,
+		no_echo_trials...,
+		
+		good_echo_trials...,
+		good_echo_trials...,
+		
+		bad_echo_trials...
+	]
+	
+	trials = [
+		no_echo_trials...,
+		shuffleArray(trial_block)...,
+		shuffleArray(trial_block)...
+	]
 
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Start!"

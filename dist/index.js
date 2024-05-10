@@ -39579,18 +39579,18 @@
           });
         };
         shuffleArray = function(array) {
-          var _, i, j, k, len, results;
-          results = [];
+          var _, i, j, k, len;
+          array = array.slice();
           for (i = k = 0, len = array.length; k < len; i = ++k) {
             _ = array[i];
             j = Math.floor(Math.random() * (i + 1));
-            results.push([array[i], array[j]] = [array[j], array[i]]);
+            [array[i], array[j]] = [array[j], array[i]];
           }
-          return results;
+          return array;
         };
         main_el = document.querySelector("#main_container");
         setup = async function() {
-          var analyzed, base, btn, ctx, d, dist, distances, echo0, echo1, echo_at_distance, expopts, fixed_bpms, fixed_echo_trials, fixed_echos, gap_width, i, intro_trials, k, l, len, len1, len2, m, n_listening, n_muted, name_el, no_echo_trials, randomized_trials, ref, repetitions, result, samples, speed_of_sound, trial_number, trial_spec, trials;
+          var analyzed, bad_echo_multipliers, bad_echo_trials, bpm, btn, ctx, distances, echo, echo_at_distance, expopts, fixed_bpms, gap_width, good_echo_multipliers, good_echo_trials, i, intro_trials, k, l, len, len1, len2, len3, len4, m, n, n_listening, n_muted, name_el, no_echo_trials, o, p, result, samples, speed_of_sound, trial_block, trial_number, trial_spec, trials;
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
@@ -39602,9 +39602,8 @@
             complete: await load_sample(ctx, "complete.flac")
           };
           await ctx.close();
-          n_listening = 8;
-          n_muted = 16;
-          repetitions = 2;
+          n_listening = 10;
+          n_muted = 20;
           expopts = {
             n_listening,
             n_muted,
@@ -39614,18 +39613,14 @@
           gap_width = 120;
           speed_of_sound = 340;
           distances = [30, 40, 60];
-          echo_at_distance = function(d2) {
-            return d2 * 2 / speed_of_sound;
+          echo_at_distance = function(d) {
+            return d * 2 / speed_of_sound;
           };
-          fixed_bpms = distances.map(function(d2) {
+          fixed_bpms = distances.map(function(d) {
             var echo_delay;
-            echo_delay = echo_at_distance(d2);
+            echo_delay = echo_at_distance(d);
             return 60 / echo_delay / 2;
           });
-          fixed_echos = fixed_bpms.map(function(v) {
-            return v * 2;
-          });
-          console.log({ fixed_bpms, fixed_echos });
           no_echo_trials = fixed_bpms.map(function(v) {
             return {
               bpm: v,
@@ -39633,27 +39628,34 @@
             };
           });
           intro_trials = no_echo_trials;
-          no_echo_trials = Array(repetitions).fill(no_echo_trials).flat();
-          fixed_echo_trials = [];
+          good_echo_multipliers = [1, 2];
+          bad_echo_multipliers = [0.9, 1.1, 1.9, 2.1];
+          good_echo_trials = [];
           for (i = k = 0, len = fixed_bpms.length; k < len; i = ++k) {
-            base = fixed_bpms[i];
-            ref = [-5, 0, 5];
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-              d = ref[l];
-              dist = distances[i] + d;
-              echo0 = 60 / echo_at_distance(dist);
-              echo1 = 60 / echo_at_distance(gap_width - dist);
-              fixed_echo_trials.push({
-                bpm: base,
-                echos: [echo0, echo1],
-                distance: dist
+            bpm = fixed_bpms[i];
+            for (l = 0, len1 = good_echo_multipliers.length; l < len1; l++) {
+              m = good_echo_multipliers[l];
+              echo = bpm * m;
+              good_echo_trials.push({
+                bpm,
+                echos: [echo]
               });
             }
           }
-          fixed_echo_trials = Array(repetitions).fill(fixed_echo_trials).flat();
-          randomized_trials = [...no_echo_trials, ...fixed_echo_trials];
-          shuffleArray(randomized_trials);
-          trials = [...intro_trials, ...randomized_trials];
+          bad_echo_trials = [];
+          for (i = n = 0, len2 = fixed_bpms.length; n < len2; i = ++n) {
+            bpm = fixed_bpms[i];
+            for (o = 0, len3 = bad_echo_multipliers.length; o < len3; o++) {
+              m = bad_echo_multipliers[o];
+              echo = bpm * m;
+              bad_echo_trials.push({
+                bpm,
+                echos: [echo]
+              });
+            }
+          }
+          trial_block = [...no_echo_trials, ...no_echo_trials, ...good_echo_trials, ...good_echo_trials, ...bad_echo_trials];
+          trials = [...no_echo_trials, ...shuffleArray(trial_block), ...shuffleArray(trial_block)];
           btn = document.querySelector("#start_button");
           btn.innerHTML = "Start!";
           await wait_for_event(document.querySelector("#start_button"));
@@ -39664,7 +39666,7 @@
           main_el.setAttribute("state", "play");
           beatIndicator.innerHTML = "Tap to the beat";
           trial_number = 1;
-          for (i = m = 0, len2 = trials.length; m < len2; i = ++m) {
+          for (i = p = 0, len4 = trials.length; p < len4; i = ++p) {
             trial_spec = trials[i];
             main_el.setAttribute("state", "play");
             beatIndicator.innerHTML = "Tap to the rhythm";

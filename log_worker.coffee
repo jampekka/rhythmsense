@@ -19,6 +19,5 @@ write_log_entry = (entry) ->
 	entry = (new TextEncoder()).encode entry
 	file_handle.write entry
 	file_handle.flush()
-	console.log "Wrote log"
 
 addEventListener "message", initialize, once: true
