@@ -259,11 +259,13 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 
 	document.addEventListener "keydown", onkeydown,
 		signal: controller.signal
-		useCapture: true
+		capture: true
+		passive: true
 	
 	document.addEventListener "pointerdown", onHit,
 		signal: controller.signal
-		useCapture: true
+		capture: true
+		passive: true
 
 wait_for_event = (el=document, ev="click") -> new Promise (resolve) ->
 	el.addEventListener ev, resolve, once: true
@@ -346,8 +348,8 @@ setup = () ->
 	#random_bpms = (new lobos.Sobol(1)).take(10).map (v) ->
 	#	v*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
 	
-	min_echo = 0.2
-	max_echo = 0.8
+	min_echo = 1.5
+	max_echo = 2.5
 	#random_echo_bpms = [random_bpms..., random_bpms...]
 	#random_echos = shuffleArray (new lobos.Sobol(1)).take random_echo_bpms.length
 	#random_echos = random_echos.map (v) ->
@@ -358,7 +360,7 @@ setup = () ->
 	random_echo_trials = (new lobos.Sobol(2)).take(20).map ([bpm, echo]) ->
 		bpm = bpm*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
 		echo = echo*(max_echo - min_echo) + min_echo
-		bpm: bpm, echos: [echo]
+		bpm: bpm, echos: [echo*bpm]
 	
 	random_bpm_trials = random_echo_trials[...10].map (t) ->
 		{t..., echos: []}
@@ -419,8 +421,9 @@ setup = () ->
 			trial_spec...
 			expopts...
 		}
-
+		
 		log "trial_starting", trial_spec
+		console.log "trial_starting", trial_spec
 		result = await run_trial {samples: samples, trial_spec...}
 		
 		main_el.setAttribute "state", "feedback"

@@ -39563,11 +39563,13 @@
             };
             document.addEventListener("keydown", onkeydown, {
               signal: controller.signal,
-              useCapture: true
+              capture: true,
+              passive: true
             });
             return document.addEventListener("pointerdown", onHit, {
               signal: controller.signal,
-              useCapture: true
+              capture: true,
+              passive: true
             });
           });
         };
@@ -39650,14 +39652,14 @@
               });
             }
           }
-          min_echo = 0.2;
-          max_echo = 0.8;
+          min_echo = 1.5;
+          max_echo = 2.5;
           random_echo_trials = new lobos.Sobol(2).take(20).map(function([bpm2, echo2]) {
             bpm2 = bpm2 * (expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm;
             echo2 = echo2 * (max_echo - min_echo) + min_echo;
             return {
               bpm: bpm2,
-              echos: [echo2]
+              echos: [echo2 * bpm2]
             };
           });
           random_bpm_trials = random_echo_trials.slice(0, 10).map(function(t) {
@@ -39697,6 +39699,7 @@
             beatIndicator.innerHTML = "Tap to the rhythm";
             trial_spec = { ...trial_spec, ...expopts };
             log("trial_starting", trial_spec);
+            console.log("trial_starting", trial_spec);
             result = await run_trial({
               samples,
               ...trial_spec
