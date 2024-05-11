@@ -39590,7 +39590,7 @@
         };
         main_el = document.querySelector("#main_container");
         setup = async function() {
-          var analyzed, bad_echo_multipliers, bad_echo_trials, bpm, btn, ctx, distances, echo, echo_at_distance, expopts, fixed_bpms, gap_width, good_echo_multipliers, good_echo_trials, i, intro_trials, k, l, len, len1, len2, len3, len4, m, n, n_listening, n_muted, name_el, no_echo_trials, o, p, result, samples, speed_of_sound, trial_block, trial_number, trial_spec, trials;
+          var analyzed, bad_echo_multipliers, bad_echo_trials, bpm, btn, ctx, distances, duration, echo, echo_at_distance, expopts, fixed_bpms, gap_width, good_echo_multipliers, good_echo_trials, i, intro_trials, k, l, len, len1, len2, len3, len4, m, max_echo, min_echo, n, n_listening, n_muted, name_el, no_echo_trials, o, p, random_bpm_trials, random_echo_trials, result, samples, speed_of_sound, trial_block, trial_number, trial_spec, trials;
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
@@ -39607,8 +39607,8 @@
           expopts = {
             n_listening,
             n_muted,
-            min_bpm: 50,
-            max_bpm: 150
+            min_bpm: 60,
+            max_bpm: 160
           };
           gap_width = 120;
           speed_of_sound = 340;
@@ -39616,11 +39616,7 @@
           echo_at_distance = function(d) {
             return d * 2 / speed_of_sound;
           };
-          fixed_bpms = distances.map(function(d) {
-            var echo_delay;
-            echo_delay = echo_at_distance(d);
-            return 60 / echo_delay / 2;
-          });
+          fixed_bpms = [70, 100, 130];
           no_echo_trials = fixed_bpms.map(function(v) {
             return {
               bpm: v,
@@ -39654,8 +39650,37 @@
               });
             }
           }
-          trial_block = [...no_echo_trials, ...no_echo_trials, ...good_echo_trials, ...good_echo_trials, ...bad_echo_trials];
+          min_echo = 0.2;
+          max_echo = 0.8;
+          random_echo_trials = new lobos.Sobol(2).take(20).map(function([bpm2, echo2]) {
+            bpm2 = bpm2 * (expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm;
+            echo2 = echo2 * (max_echo - min_echo) + min_echo;
+            return {
+              bpm: bpm2,
+              echos: [echo2]
+            };
+          });
+          random_bpm_trials = random_echo_trials.slice(0, 10).map(function(t) {
+            return {
+              ...t,
+              echos: []
+            };
+          });
+          trial_block = [
+            ...no_echo_trials,
+            ...no_echo_trials,
+            ...good_echo_trials,
+            ...good_echo_trials,
+            ...bad_echo_trials,
+            // TODO: Shouldn't maybe repeat these
+            // to get more coverage instead of repetitions?
+            ...random_bpm_trials,
+            ...random_echo_trials
+          ];
           trials = [...no_echo_trials, ...shuffleArray(trial_block), ...shuffleArray(trial_block)];
+          duration = trials.reduce(function(total, t) {
+            return total + 60 / t.bpm * (expopts.n_listening + expopts.n_muted);
+          }, 0);
           btn = document.querySelector("#start_button");
           btn.innerHTML = "Start!";
           await wait_for_event(document.querySelector("#start_button"));

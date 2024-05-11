@@ -9,7 +9,7 @@ context = () ->
 		sourcemap: true
 		bundle: true
 		plugins: [
-			require("esbuild-coffeescript")()
+			require("esbuild-coffeescript")(inlineMap: true)
 			require("esbuild-sass-plugin").sassPlugin
 				cache: false
 		]

@@ -304,8 +304,8 @@ setup = () ->
 	expopts = {
 		n_listening
 		n_muted
-		min_bpm: 50
-		max_bpm: 150
+		min_bpm: 60
+		max_bpm: 160
 	}
 	
 	gap_width = 120
@@ -342,8 +342,31 @@ setup = () ->
 			echo = bpm*m
 			bad_echo_trials.push bpm: bpm, echos: [echo]
 	
-	# TODO: Randomly sampled trials!
+	# TODO: The sampling could be nicer?
+	#random_bpms = (new lobos.Sobol(1)).take(10).map (v) ->
+	#	v*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
+	
+	min_echo = 0.2
+	max_echo = 0.8
+	#random_echo_bpms = [random_bpms..., random_bpms...]
+	#random_echos = shuffleArray (new lobos.Sobol(1)).take random_echo_bpms.length
+	#random_echos = random_echos.map (v) ->
+	#	v*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
+	#	
+	#	v*(max_echo - min_echo) + min_echo
+	
+	random_echo_trials = (new lobos.Sobol(2)).take(20).map ([bpm, echo]) ->
+		bpm = bpm*(expopts.max_bpm - expopts.min_bpm) + expopts.min_bpm
+		echo = echo*(max_echo - min_echo) + min_echo
+		bpm: bpm, echos: [echo]
+	
+	random_bpm_trials = random_echo_trials[...10].map (t) ->
+		{t..., echos: []}
 
+	#random_bpm_trials = 
+	#random_echo_trials = random_echo_bpms.map (bpm, i) ->
+	#	bpm: bpm, echos: random_echos[i]
+	
 	trial_block = [
 		no_echo_trials...,
 		no_echo_trials...,
@@ -352,6 +375,10 @@ setup = () ->
 		good_echo_trials...,
 		
 		bad_echo_trials...
+		# TODO: Shouldn't maybe repeat these
+		# to get more coverage instead of repetitions?
+		random_bpm_trials...
+		random_echo_trials...
 	]
 	
 	trials = [
@@ -359,6 +386,10 @@ setup = () ->
 		shuffleArray(trial_block)...,
 		shuffleArray(trial_block)...
 	]
+
+	duration = trials.reduce ((total, t) ->
+		total + 60/t.bpm*(expopts.n_listening + expopts.n_muted)),
+		0
 
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Start!"
