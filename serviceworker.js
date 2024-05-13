@@ -1,8 +1,11 @@
+self.addEventListener("activate", () => {
+	clients.claim();
+});
+
 self.addEventListener("install", (event) => {
-	console.log("Installing");
 	event.waitUntil(async function() {
 		let cache = await caches.open("dontcare");
-		cache.addAll(["/", "index.html"]);
+		await cache.addAll(["/", "index.html"]);
 	});
 });
 
