@@ -1,7 +1,7 @@
 $ = require 'jquery'
 lobos = require 'lobos'
 
-{AudioContext} = require 'standardized-audio-context'
+#{AudioContext} = require 'standardized-audio-context'
 
 
 logging = require './logging.coffee'
@@ -116,7 +116,17 @@ hitAnim = [
 animTiming =
 	duration: 0.2*1000
 
+# TODO: Should be named audioTimeout
 audioInterval = (ctx, interval, cb) -> new Promise (accept) ->
+	done = ->
+		if cb
+			accept(cb())
+		else
+			accept()
+	setTimeout done, interval*1000
+	
+	# Doesn't work on iOS safari at least
+	###
 	dummyNode = ctx.createConstantSource()
 	dummyNode.addEventListener "ended", ->
 		if cb
@@ -126,6 +136,7 @@ audioInterval = (ctx, interval, cb) -> new Promise (accept) ->
 	interval -= ctx.baseLatency*2
 	dummyNode.start()
 	dummyNode.stop(ctx.currentTime + interval)
+	###
 
 playSample = (ctx, sample, output) ->
 	source = ctx.createBufferSource()
@@ -410,7 +421,8 @@ setup = () ->
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Start!"
 	await wait_for_event document.querySelector "#start_button"
-	await document.querySelector("body").requestFullscreen navigationUI: "hide"
+	# This makes the AudioContext to stay suspended on iOS
+	#document.querySelector("body").requestFullscreen navigationUI: "hide"
 	
 	name_el = document.querySelector "#name_input"
 	log "experiment_start",
@@ -423,7 +435,6 @@ setup = () ->
 
 	#rng = new lobos.Sobol 1
 	#rng.next # Skip the first 0
-	trial_number = 1
 	for trial_spec, i in trials
 		main_el.setAttribute "state", "play"
 		
@@ -435,6 +446,7 @@ setup = () ->
 		trial_spec = {
 			trial_spec...
 			expopts...
+			trial_number: i
 		}
 		
 		log "trial_starting", trial_spec
