@@ -2,24 +2,26 @@ Plotly = require "plotly.js-dist"
 d3 = require 'd3'
 mj = require 'mathjs'
 
-{read_logs, analyze_accuracy} = require './logging.coffee'
+logging = require './logging.coffee'
+{read_logs, analyze_accuracy} = logging
 
 get_session_data = (log_events) ->
 	session =
 		trials: []
-	for row in log_events
-		if row.type == "experiment_start"
-			session.name = row.name
-		if row.type == "trial_starting"
+	for [hdr, data] in log_events
+		if hdr.type == "experiment_start"
+			session.name = data.name
+		if hdr.type == "trialstart"
 			trial = {
-				row...,
+				header: hdr
+				data...
 				hits: []
 			}
 			session.trials.push trial
-		if row.type == "trialstart"
-			trial = {trial..., row...}
-		if row.type == "hit"
-			trial.hits.push row.timestamp/1000
+		#if hdr.type == "trialstart"
+		#	trial = {trial..., row...}
+		if hdr.type == "hit"
+			trial.hits.push data.timeStamp/1000
 	return session
 
 render_bpm_graph = (session) ->
@@ -42,8 +44,9 @@ render_bpm_graph = (session) ->
 		showlegend: false
 	
 	for trial in session.trials
+		continue if trial.hits.length < 2
+		
 		r = analyze_accuracy trial
-		continue if r.hit_bpm_errors < 2
 		
 		#durs = r.hit_bpms
 		durs = r.hit_bpm_errors
@@ -81,7 +84,6 @@ render_error_graph = (session) ->
 	errors = []
 	echos = []
 	for trial in session.trials
-		continue if trial.bpm != 70
 		r = analyze_accuracy trial
 		bpms.push trial.bpm
 		silent = r.hit_bpms.slice(r.n_listening + 1)
@@ -135,7 +137,11 @@ do ->
 	
 	sessions_el = document.querySelector "#session_selector"
 	for await [name, log] from read_logs()
-		data = get_session_data log
+		try
+			data = get_session_data log
+		catch e
+			console.log "Session reading failed", e
+			continue
 		continue if not data.trials.length
 		sessions.push [name, data]
 		

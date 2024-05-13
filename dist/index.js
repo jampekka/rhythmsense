@@ -39224,13 +39224,14 @@
   var require_logging = __commonJS({
     "logging.coffee"(exports, module) {
       (function() {
-        var analyze_accuracy, get_logger, get_worker, read_logs;
+        var LOGDIR, analyze_accuracy, dump_primitives, get_logger, get_worker, read_logs;
+        LOGDIR = "rhythmsense_log";
         get_logger = async function(session_id) {
           var dir, file, worker;
           if (session_id == null) {
             session_id = session_id = (/* @__PURE__ */ new Date()).toISOString();
           }
-          dir = "rhythmsense_log";
+          dir = LOGDIR;
           file = session_id + ".jsons";
           worker = get_worker();
           worker.postMessage({ dir, file });
@@ -39249,7 +39250,7 @@
         read_logs = async function* () {
           var data, file, fs_root, handle, j, len, line, log_dir, name, ref, results, rows, x;
           fs_root = await navigator.storage.getDirectory();
-          log_dir = await fs_root.getDirectoryHandle("rhythmsense_log", {
+          log_dir = await fs_root.getDirectoryHandle(LOGDIR, {
             create: true
           });
           ref = log_dir.entries();
@@ -39266,10 +39267,20 @@
               }
               rows.push(JSON.parse(line));
             }
-            console.log([name, rows]);
             results.push(yield [name, rows]);
           }
           return results;
+        };
+        dump_primitives = function(ev) {
+          var k, out, v;
+          out = {};
+          for (k in ev) {
+            v = ev[k];
+            if (!["function", "object"].includes(typeof v)) {
+              out[k] = v;
+            }
+          }
+          return out;
         };
         analyze_accuracy = function(trial) {
           var hits, n_valid, r;
@@ -39286,16 +39297,17 @@
             return v - trial.bpm;
           });
           r.hit_bpm_errors_abs = r.hit_bpm_errors.map(Math.abs);
+          console.log(r.hit_bpm_errors_abs);
           r.hit_bpm_mad = r.hit_bpm_errors_abs.slice(1).reduce(function(acc, v) {
             return acc + v / n_valid;
-          });
+          }, 0);
           r.hit_bpm_score = 100 - r.hit_bpm_mad / trial.bpm * 100;
           r.hit_bpm_mean_error = r.hit_bpm_errors.slice(1).reduce(function(acc, v) {
             return acc + v / n_valid;
-          });
+          }, 0);
           return r;
         };
-        module.exports = { get_logger, read_logs, analyze_accuracy };
+        module.exports = { get_logger, read_logs, analyze_accuracy, dump_primitives };
       }).call(exports);
     }
   });
@@ -39311,16 +39323,17 @@
         logging = require_logging();
         log_events = [];
         logger = await logging.get_logger();
-        log = function(type, data) {
-          var header;
+        log = function(type, data, extraheader = {}) {
+          var header, row;
           header = {
-            type,
-            timestamp: performance.now(),
-            utc: Date.now()
+            "type": type,
+            "timestamp": performance.now(),
+            "utc": Date.now(),
+            ...extraheader
           };
-          data = { ...header, ...data };
-          logger(data);
-          return log_events.push(data);
+          row = [header, data];
+          logger(row);
+          return log_events.push(row);
         };
         load_sample = async function(ctx, url) {
           var buf;
@@ -39490,20 +39503,19 @@
             return this._playing = false;
           }
         };
-        run_trial = function(trial_spec) {
+        run_trial = function(samples, trial_spec) {
           return new Promise(function(resolve) {
-            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, k, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, prev_beat_timestamp, samples, teardown;
-            ({ bpm, samples, n_listening, n_muted, echos = [] } = trial_spec);
+            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, k, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, prev_beat_timestamp, teardown;
+            ({ bpm, n_listening, n_muted, echos = [] } = trial_spec);
             context = new AudioContext({
               latencyHint: 0
             });
             ctxlog = function(type, data = {}) {
-              return log(type, {
-                audio_time: context.currentTime,
-                ...data
+              return log(type, data, {
+                audio_time: context.currentTime
               });
             };
-            ctxlog("trialstart", { bpm, echos, n_listening, n_muted });
+            ctxlog("trialstart", trial_spec);
             beat_interval = 1 / (bpm / 60);
             metronome = new Metronome(context, samples.click, beat_interval);
             metronome.output.connect(context.destination);
@@ -39533,15 +39545,15 @@
             controller = new AbortController();
             prev_beat_timestamp = null;
             onHit = function(ev) {
-              var timestamp;
-              ctxlog("hit_event", ev);
+              var ev_dump, timestamp;
+              ev_dump = logging.dump_primitives(ev);
+              ctxlog("hit_event", ev_dump);
               timestamp = ev.timeStamp / 1e3;
               if (prev_beat_timestamp != null && timestamp - prev_beat_timestamp < 0.1) {
-                ctxlog("hit_event_debounced", ev);
                 return;
               }
               prev_beat_timestamp = timestamp;
-              ctxlog("hit", ev);
+              ctxlog("hit", ev_dump);
               playSample(context, samples.hit, hitter);
               beatIndicator.animate(hitAnim, animTiming);
               beats.push(timestamp);
@@ -39709,10 +39721,7 @@
             trial_spec = { ...trial_spec, ...expopts };
             log("trial_starting", trial_spec);
             console.log("trial_starting", trial_spec);
-            result = await run_trial({
-              samples,
-              ...trial_spec
-            });
+            result = await run_trial(samples, trial_spec);
             main_el.setAttribute("state", "feedback");
             analyzed = logging.analyze_accuracy(result);
             document.querySelector("#feedback_message").innerHTML = `<p>Trial ${i + 1} of ${trials.length}</p>

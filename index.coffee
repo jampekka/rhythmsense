@@ -10,16 +10,19 @@ log_events = []
 
 logger = await logging.get_logger()
 
-log = (type, data) ->
-	header =
-		type: type
-		timestamp: performance.now()
-		utc: Date.now()
+log = (type, data, extraheader={}) ->
+	header = {
+		"type": type
+		"timestamp": performance.now()
+		"utc": Date.now()
+		extraheader...
+	}
 	
-	data = {header..., data...}
-	logger data
 
-	log_events.push data
+	row = [header, data]
+	logger row
+	#console.log {header, data}
+	log_events.push row
 #log "session_start", {}
 
 load_sample = (ctx, url) ->
@@ -181,14 +184,14 @@ class Metronome extends EventTarget
 		
 
 # TODO: Parametrize. Perhaps create a class
-run_trial = (trial_spec) -> new Promise (resolve) ->
-	{bpm, samples, n_listening, n_muted, echos=[]} = trial_spec
+run_trial = (samples, trial_spec) -> new Promise (resolve) ->
+	{bpm, n_listening, n_muted, echos=[]} = trial_spec
 	context = new AudioContext latencyHint: 0
 	
 	ctxlog = (type, data={}) ->
-		log type, {audio_time: context.currentTime, data...}
+		log type, data, {audio_time: context.currentTime}
 	
-	ctxlog "trialstart", {bpm, echos, n_listening, n_muted}
+	ctxlog "trialstart", trial_spec
 	
 	beat_interval = 1/(bpm/60)
 	metronome = new Metronome context, samples.click, beat_interval
@@ -227,18 +230,17 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 	controller = new AbortController()
 	prev_beat_timestamp = null
 	onHit = (ev) ->
-		ctxlog "hit_event", ev
-		
+		ev_dump = logging.dump_primitives ev
+		ctxlog "hit_event", ev_dump
+
 		timestamp = ev.timeStamp/1000
 		if prev_beat_timestamp? and (timestamp - prev_beat_timestamp) < 0.1
-			ctxlog "hit_event_debounced", ev
 			return
-
 		prev_beat_timestamp = timestamp
 
 		# TODO: Debounce hits. At least iOS likes to do a lot of these.
 		# log also relevant info about the event
-		ctxlog "hit", ev
+		ctxlog "hit", ev_dump
 		playSample context, samples.hit, hitter
 		
 
@@ -434,7 +436,7 @@ setup = () ->
 		
 		log "trial_starting", trial_spec
 		console.log "trial_starting", trial_spec
-		result = await run_trial {samples: samples, trial_spec...}
+		result = await run_trial samples, trial_spec
 		
 		main_el.setAttribute "state", "feedback"
 		

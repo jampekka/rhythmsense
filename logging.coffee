@@ -1,7 +1,9 @@
+LOGDIR = "rhythmsense_log"
+
 get_logger = (session_id) ->
 	session_id ?= session_id = new Date() .toISOString()
 	
-	dir = "rhythmsense_log"
+	dir = LOGDIR
 	file = session_id + ".jsons"
 	
 	worker = get_worker()
@@ -22,7 +24,7 @@ get_worker = ->
 
 read_logs = ->
 	fs_root = await navigator.storage.getDirectory()
-	log_dir = await fs_root.getDirectoryHandle "rhythmsense_log", create: true
+	log_dir = await fs_root.getDirectoryHandle LOGDIR, create: true
 	for await [name, handle] from log_dir.entries()
 		file = await handle.getFile()
 		# TODO: Could be a lot faster
@@ -31,8 +33,17 @@ read_logs = ->
 		for line in data
 			continue if not line
 			rows.push JSON.parse line
-		console.log [name, rows]
 		yield [name, rows]
+
+# Take primitive values of an object. Used to
+# dump DOM events. Doesn't do traversal, this hopefully
+# doesn't matter for our case
+dump_primitives = (ev) ->
+	out = {}
+	for k, v of ev
+		if not ["function", "object"].includes typeof v
+			out[k] = v
+	return out
 
 # Maybe doesn't belong here
 analyze_accuracy = (trial) ->
@@ -44,11 +55,13 @@ analyze_accuracy = (trial) ->
 	r.hit_bpms = r.hit_durations.map (v) -> 60/v
 	r.hit_bpm_errors = r.hit_bpms.map (v) -> v - trial.bpm
 	r.hit_bpm_errors_abs = r.hit_bpm_errors.map Math.abs
-	r.hit_bpm_mad = r.hit_bpm_errors_abs[1...].reduce (acc, v) ->
+	console.log r.hit_bpm_errors_abs
+	r.hit_bpm_mad = r.hit_bpm_errors_abs[1...].reduce ((acc, v) ->
 		acc + v/n_valid
+		), 0
 	r.hit_bpm_score = 100 - (r.hit_bpm_mad/trial.bpm)*100
-	r.hit_bpm_mean_error = r.hit_bpm_errors[1...].reduce (acc, v) -> acc + v/n_valid
+	r.hit_bpm_mean_error = r.hit_bpm_errors[1...].reduce ((acc, v) -> acc + v/n_valid), 0
 
 	return r
 
-module.exports = {get_logger, read_logs, analyze_accuracy}
+module.exports = {get_logger, read_logs, analyze_accuracy, dump_primitives}
