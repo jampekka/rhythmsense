@@ -1,0 +1,11 @@
+{
+	"name": "RhythmSense",
+	"start_url": "index.html",
+	"display": "fullscreen",
+	"icons": [{
+		"src": "icon256.png",
+		"sizes": "256x256",
+		"type": "image/png"
+		}
+	]
+}
