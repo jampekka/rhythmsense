@@ -1,5 +1,5 @@
-self.addEventListener("activate", () => {
-	clients.claim();
+self.addEventListener("activate", (event) => {
+	event.waitUntil(clients.claim());
 });
 
 self.addEventListener("install", (event) => {
@@ -14,10 +14,10 @@ async function handleFetch(event) {
 		let response = await fetch(event.request);
 		let cache = await caches.open("dontcare");
 		cache.put(event.request, response.clone());
-		console.log("From network");
+		//console.log("From network", event.request.url);
 		return response;
    	} catch (error) {
-		console.log("From cache");
+		//console.log("From cache", event.request.url);
 		return caches.match(event.request);
 	}
 }
