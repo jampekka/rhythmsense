@@ -225,7 +225,17 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 	beats = []
 	metronome.start()
 	controller = new AbortController()
+	prev_beat_timestamp = null
 	onHit = (ev) ->
+		ctxlog "hit_event", ev
+		
+		timestamp = ev.timeStamp/1000
+		if prev_beat_timestamp? and (timestamp - prev_beat_timestamp) < 0.1
+			ctxlog "hit_event_debounced", ev
+			return
+
+		prev_beat_timestamp = timestamp
+
 		# TODO: Debounce hits. At least iOS likes to do a lot of these.
 		# log also relevant info about the event
 		ctxlog "hit", ev
@@ -233,7 +243,7 @@ run_trial = (trial_spec) -> new Promise (resolve) ->
 		
 
 		beatIndicator.animate hitAnim, animTiming
-		beats.push ev.timeStamp/1000
+		beats.push timestamp
 		
 		# TODO: Fade out instead?
 		if beats.length == n_listening

@@ -39492,7 +39492,7 @@
         };
         run_trial = function(trial_spec) {
           return new Promise(function(resolve) {
-            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, k, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, samples, teardown;
+            var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, k, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, prev_beat_timestamp, samples, teardown;
             ({ bpm, samples, n_listening, n_muted, echos = [] } = trial_spec);
             context = new AudioContext({
               latencyHint: 0
@@ -39531,11 +39531,20 @@
             beats = [];
             metronome.start();
             controller = new AbortController();
+            prev_beat_timestamp = null;
             onHit = function(ev) {
+              var timestamp;
+              ctxlog("hit_event", ev);
+              timestamp = ev.timeStamp / 1e3;
+              if (prev_beat_timestamp != null && timestamp - prev_beat_timestamp < 0.1) {
+                ctxlog("hit_event_debounced", ev);
+                return;
+              }
+              prev_beat_timestamp = timestamp;
               ctxlog("hit", ev);
               playSample(context, samples.hit, hitter);
               beatIndicator.animate(hitAnim, animTiming);
-              beats.push(ev.timeStamp / 1e3);
+              beats.push(timestamp);
               if (beats.length === n_listening) {
                 metronome.stop();
               }
