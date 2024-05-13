@@ -39316,7 +39316,7 @@
   var require_rhythmsense = __commonJS({
     "index.coffee"(exports) {
       (async function() {
-        var $, AudioContext, Metronome, STOP, animTiming, audioInterval, beatIndicator, easeInOffset, get_sessions, hitAnim, listen, load_sample, lobos, log, log_events, logger, logging, main_el, metronomeAnim, playSample, run_trial, setup, shuffleArray, wait_for_event;
+        var $, AudioContext, Metronome, STOP, animTiming, audioInterval, beatIndicator, easeInOffset, get_sessions, hitAnim, listen, load_sample, lobos, log, log_events, logger, logging, main_el, metronomeAnim, playSample, run_trial, setup, shuffleArray, waitSample, wait_for_event;
         $ = require_jquery();
         lobos = require_lobos();
         ({ AudioContext } = require_bundle2());
@@ -39446,6 +39446,13 @@
           });
         };
         playSample = function(ctx, sample, output) {
+          var source;
+          source = ctx.createBufferSource();
+          source.buffer = sample;
+          source.connect(output != null ? output : ctx.destination);
+          return source.start();
+        };
+        waitSample = function(ctx, sample, output) {
           return new Promise(function(accept) {
             var source;
             source = ctx.createBufferSource();
@@ -39508,7 +39515,7 @@
             var beat_interval, beats, bpm, context, controller, ctxlog, delay, echo, echos, gain, hitter, k, len, metronome, n_listening, n_muted, onBeat, onHit, onkeydown, prev_beat_timestamp, teardown;
             ({ bpm, n_listening, n_muted, echos = [] } = trial_spec);
             context = new AudioContext({
-              latencyHint: 0
+              latencyHint: "interactive"
             });
             ctxlog = function(type, data = {}) {
               return log(type, data, {
@@ -39518,6 +39525,7 @@
             ctxlog("trialstart", trial_spec);
             beat_interval = 1 / (bpm / 60);
             metronome = new Metronome(context, samples.click, beat_interval);
+            metronome.output.gain.value = 0.5;
             metronome.output.connect(context.destination);
             onBeat = function(time) {
               var timeToEvent;
@@ -39566,7 +39574,7 @@
             };
             teardown = async function() {
               controller.abort();
-              await playSample(context, samples.complete);
+              await waitSample(context, samples.complete);
               context.close();
               return resolve({
                 ...trial_spec,
@@ -39639,7 +39647,7 @@
           echo_at_distance = function(d) {
             return d * 2 / speed_of_sound;
           };
-          fixed_bpms = [70, 100, 130];
+          fixed_bpms = [100, 70, 130];
           no_echo_trials = fixed_bpms.map(function(v) {
             return {
               bpm: v,

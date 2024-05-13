@@ -127,7 +127,13 @@ audioInterval = (ctx, interval, cb) -> new Promise (accept) ->
 	dummyNode.start()
 	dummyNode.stop(ctx.currentTime + interval)
 
-playSample = (ctx, sample, output) -> new Promise (accept) ->
+playSample = (ctx, sample, output) ->
+	source = ctx.createBufferSource()
+	source.buffer = sample
+	source.connect output ? ctx.destination
+	source.start()
+
+waitSample = (ctx, sample, output) -> new Promise (accept) ->
 	source = ctx.createBufferSource()
 	source.buffer = sample
 	source.addEventListener "ended", accept
@@ -186,7 +192,7 @@ class Metronome extends EventTarget
 # TODO: Parametrize. Perhaps create a class
 run_trial = (samples, trial_spec) -> new Promise (resolve) ->
 	{bpm, n_listening, n_muted, echos=[]} = trial_spec
-	context = new AudioContext latencyHint: 0
+	context = new AudioContext latencyHint: "interactive"
 	
 	ctxlog = (type, data={}) ->
 		log type, data, {audio_time: context.currentTime}
@@ -195,6 +201,7 @@ run_trial = (samples, trial_spec) -> new Promise (resolve) ->
 	
 	beat_interval = 1/(bpm/60)
 	metronome = new Metronome context, samples.click, beat_interval
+	metronome.output.gain.value = 0.5
 	metronome.output.connect context.destination
 	
 	onBeat = (time) ->
@@ -211,10 +218,6 @@ run_trial = (samples, trial_spec) -> new Promise (resolve) ->
 	hitter.connect context.destination
 	
 	for echo in echos
-		# TODO: This doesn't work for long echos. Likely
-		# the sample node gets disconnected/destroyed and its
-		# data doesn't get kept? Or then the max delay bugs out?
-		# TODO: Works on Firefox, fails on Chromium
 		echo = 1/(echo/60)
 		delay = context.createDelay echo*2
 		delay.delayTime.value = echo
@@ -238,9 +241,8 @@ run_trial = (samples, trial_spec) -> new Promise (resolve) ->
 			return
 		prev_beat_timestamp = timestamp
 
-		# TODO: Debounce hits. At least iOS likes to do a lot of these.
-		# log also relevant info about the event
 		ctxlog "hit", ev_dump
+		# This fails to play sometimes!
 		playSample context, samples.hit, hitter
 		
 
@@ -258,7 +260,7 @@ run_trial = (samples, trial_spec) -> new Promise (resolve) ->
 	
 	teardown = ->
 		controller.abort()
-		await playSample context, samples.complete
+		await waitSample context, samples.complete
 		
 		context.close()
 		resolve {trial_spec..., hits: beats}
@@ -333,7 +335,7 @@ setup = () ->
 	#	echo_delay = echo_at_distance d
 	#	return 60/echo_delay/2
 	
-	fixed_bpms = [70, 100, 130]
+	fixed_bpms = [100, 70, 130]
 	#fixed_echos = fixed_bpms.map (v) -> v*2
 
 	no_echo_trials = fixed_bpms.map (v) -> bpm: v, echos: []
