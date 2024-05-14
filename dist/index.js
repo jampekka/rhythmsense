@@ -27528,7 +27528,7 @@
             ctxlog("trialstart", trial_spec);
             beat_interval = 1 / (bpm / 60);
             metronome = new Metronome(context, samples.click, beat_interval);
-            metronome.output.gain.value = 0.5;
+            metronome.output.gain.value = 1;
             metronome.output.connect(context.destination);
             onBeat = function(time) {
               var timeToEvent;
@@ -27548,7 +27548,7 @@
               delay = context.createDelay(echo * 2);
               delay.delayTime.value = echo;
               gain = context.createGain();
-              gain.gain.value = 0.3;
+              gain.gain.value = 0.05;
               hitter.connect(delay).connect(gain).connect(context.destination);
             }
             beats = [];
@@ -27628,11 +27628,15 @@
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
-            click: await load_sample(ctx, "click.flac"),
+            //click: await load_sample ctx, 'click.flac'
+            //click: await load_sample ctx, 'sounds/808/TR808WAV/BD/BD5025.WAV'
+            click: await load_sample(ctx, "sounds/808/TR808WAV/CL/CL.WAV"),
             // NOTE: On Chomium this has to be mono for the delays to work. If it's
             // stereo. Probably related to:
             // https://github.com/WebAudio/web-audio-api/issues/1719
-            hit: await load_sample(ctx, "hit.mono.wav"),
+            // Sample from http://smd-records.com/tr808/?page_id=14
+            //hit: await load_sample ctx, 'sounds/808_snare_7525.flac'
+            hit: await load_sample(ctx, "sounds/808/TR808WAV/HT/HT10.WAV"),
             complete: await load_sample(ctx, "complete.flac")
           };
           await ctx.close();
@@ -27713,7 +27717,7 @@
           ];
           trials = [...no_echo_trials, ...shuffleArray(trial_block), ...shuffleArray(trial_block)];
           duration = trials.reduce(function(total, t) {
-            return total + 60 / t.bpm * (expopts.n_listening + expopts.n_muted);
+            return total + 60 / t.bpm * (expopts.n_listening + expopts.n_muted) + 5;
           }, 0);
           btn = document.querySelector("#start_button");
           btn.innerHTML = "Start!";
