@@ -27715,14 +27715,14 @@
             ...random_bpm_trials,
             ...random_echo_trials
           ];
-          trials = [...no_echo_trials, ...shuffleArray(trial_block), ...shuffleArray(trial_block)];
+          trials = [...no_echo_trials, ...shuffleArray(trial_block)];
           duration = trials.reduce(function(total, t) {
             return total + 60 / t.bpm * (expopts.n_listening + expopts.n_muted) + 5;
           }, 0);
+          console.log("Estimated session duration", duration / 60);
           btn = document.querySelector("#start_button");
           btn.innerHTML = "Waiting for consent";
           form = document.querySelector("#consent_form");
-          console.log(form);
           all_accepted = false;
           $(form).change(function() {
             var boxes, el, len42, p2;

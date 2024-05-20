@@ -408,6 +408,7 @@ setup = () ->
 		good_echo_trials...,
 		
 		bad_echo_trials...
+		
 		# TODO: Shouldn't maybe repeat these
 		# to get more coverage instead of repetitions?
 		random_bpm_trials...
@@ -418,19 +419,18 @@ setup = () ->
 	trials = [
 		no_echo_trials...,
 		shuffleArray(trial_block)...,
-		shuffleArray(trial_block)...
+		#shuffleArray(trial_block)...
 	]
 	
 	duration = trials.reduce ((total, t) ->
 		total + 60/t.bpm*(expopts.n_listening + expopts.n_muted) + 5),
 		0
-	#console.log "Estimated session duration", duration/60
+	console.log "Estimated session duration", duration/60
 	
 	# TODO: A total mess
 	btn = document.querySelector "#start_button"
 	btn.innerHTML = "Waiting for consent"
 	form = document.querySelector "#consent_form"
-	console.log form
 	all_accepted = false
 	$(form).change ->
 		boxes = $('#consent_form input[type="checkbox"]')
