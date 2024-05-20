@@ -426,6 +426,7 @@ setup = () ->
 		total + 60/t.bpm*(expopts.n_listening + expopts.n_muted) + 5),
 		0
 	console.log "Estimated session duration", duration/60
+	document.querySelector("#duration").innerHTML = Math.round duration/60
 	
 	# TODO: A total mess
 	btn = document.querySelector "#start_button"
