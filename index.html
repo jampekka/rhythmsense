@@ -31,15 +31,36 @@ registerServiceWorker();
 	<div id="instructions">
 		<h1 id="instruction">Keep the Rhythm</h1>
 		<p><b>Your task is to keep a steady rhythm.</b></p>
+
 		<p> You will first hear a steady metronome beat to follow. Get to the rhythm and start tapping in it.</p>
 		<p>The metronome will stop at some point. Keep tapping until you hear a bell.</p>
 		<p>Sometimes you will hear an echo of your tap. Try to keep the rhythm regardless.</p>
-		<div>
-		<input type="text" id="name_input" class="form-control form-control-lg" placeholder="Name (optional)" >
+		<form id="consent_form">
+		<div class="form-group">
+		<label for="name_input">Session id</label>
+		<input type="text" id="name_input" class="form-control form-control-lg" placeholder="Session id" >
+		<h3>I understand and accept:</h3>
+		<div class="form-check">
+		<input type="checkbox" id="purpose" class="form-check-input">
+		<label for="purpose">The experiment studies how humans keep rhythm in different sound environments. Anonymous data from the experiment may be used for scientific publishing.</label>
 		</div>
+
+		<div class="form-check">
+		<input type="checkbox" id="project" class="form-check-input">
+		<label for="project">The experiment is part of the SacredSounds project at University of Helsinki. The responsible researcher of the experiment is Dr. Jami Pekkanen.</label>
+		</div>
+
+		<div class="form-check">
+		<input type="checkbox" id="voluntary" class="form-check-input">
+		<label for="voluntary">Participating in the experiment is voluntary. You can stop the experiment at any time for any reason.</label>
+		</div>
+
+		</div>
+		
+		</form>
 		<div class="button_container">
 			<div class="flex_spacer"></div>
-		<button id="start_button" class="btn btn-success">Loading...</button>
+		<button id="start_button" class="btn">Loading...</button>
 		</div>
 		<a id="view_data_button" href="analyze.html" target="_blank">View data</a>
 	</div>

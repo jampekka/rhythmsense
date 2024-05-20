@@ -11342,7 +11342,6 @@ fieldset:disabled .btn {
 }
 #main_container[state=instruct] > #instructions {
   display: block !important;
-  text-align: center;
 }
 #main_container[state=play] > #beatindicatorcontainer {
   display: flex !important;

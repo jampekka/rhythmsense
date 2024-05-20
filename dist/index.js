@@ -27624,7 +27624,7 @@
         };
         main_el = document.querySelector("#main_container");
         setup = async function() {
-          var analyzed, bad_echo_multipliers, bad_echo_trials, bpm, btn, ctx, distances, duration, echo, echo_at_distance, expopts, fixed_bpms, gap_width, good_echo_multipliers, good_echo_trials, i, intro_trials, k, l, len, len1, len2, len3, len4, m, max_echo, min_echo, n, n_listening, n_muted, name_el, no_echo_trials, o, p, random_bpm_trials, random_echo_trials, result, samples, speed_of_sound, trial_block, trial_spec, trials;
+          var all_accepted, analyzed, bad_echo_multipliers, bad_echo_trials, bpm, btn, ctx, distances, duration, echo, echo_at_distance, expopts, fixed_bpms, form, gap_width, good_echo_multipliers, good_echo_trials, i, intro_trials, k, l, len, len1, len2, len3, len4, m, max_echo, min_echo, n, n_listening, n_muted, name_el, no_echo_trials, o, p, random_bpm_trials, random_echo_trials, result, samples, speed_of_sound, trial_block, trial_spec, trials;
           ctx = new AudioContext();
           ctx.suspend();
           samples = {
@@ -27634,8 +27634,8 @@
             // NOTE: On Chomium this has to be mono for the delays to work. If it's
             // stereo. Probably related to:
             // https://github.com/WebAudio/web-audio-api/issues/1719
-            // Sample from http://smd-records.com/tr808/?page_id=14
             //hit: await load_sample ctx, 'sounds/808_snare_7525.flac'
+            // TODO: A bit too low and too much reverb(?)
             hit: await load_sample(ctx, "sounds/808/TR808WAV/HT/HT10.WAV"),
             complete: await load_sample(ctx, "complete.flac")
           };
@@ -27720,8 +27720,33 @@
             return total + 60 / t.bpm * (expopts.n_listening + expopts.n_muted) + 5;
           }, 0);
           btn = document.querySelector("#start_button");
-          btn.innerHTML = "Start!";
-          await wait_for_event(document.querySelector("#start_button"));
+          btn.innerHTML = "Waiting for consent";
+          form = document.querySelector("#consent_form");
+          console.log(form);
+          all_accepted = false;
+          $(form).change(function() {
+            var boxes, el, len42, p2;
+            boxes = $('#consent_form input[type="checkbox"]');
+            console.log(boxes);
+            all_accepted = false;
+            btn.innerHTML = "Waiting for consent";
+            for (p2 = 0, len42 = boxes.length; p2 < len42; p2++) {
+              el = boxes[p2];
+              if (!$(el).prop("checked")) {
+                all_accepted = false;
+                return;
+              }
+            }
+            all_accepted = true;
+            btn.innerHTML = "Start!";
+            return $(btn).addClass("btn-success");
+          });
+          while (true) {
+            await wait_for_event(document.querySelector("#start_button"));
+            if (all_accepted) {
+              break;
+            }
+          }
           name_el = document.querySelector("#name_input");
           log("experiment_start", {
             name: name_el.value

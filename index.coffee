@@ -426,9 +426,29 @@ setup = () ->
 		0
 	#console.log "Estimated session duration", duration/60
 	
+	# TODO: A total mess
 	btn = document.querySelector "#start_button"
-	btn.innerHTML = "Start!"
-	await wait_for_event document.querySelector "#start_button"
+	btn.innerHTML = "Waiting for consent"
+	form = document.querySelector "#consent_form"
+	console.log form
+	all_accepted = false
+	$(form).change ->
+		boxes = $('#consent_form input[type="checkbox"]')
+		console.log boxes
+		all_accepted = false
+		btn.innerHTML = "Waiting for consent"
+		for el in boxes
+			if not $(el).prop("checked")
+				all_accepted = false
+				return
+		all_accepted = true
+		btn.innerHTML = "Start!"
+		$(btn).addClass "btn-success"
+	
+	while true
+		await wait_for_event document.querySelector "#start_button"
+		if all_accepted
+			break
 	# This makes the AudioContext to stay suspended on iOS
 	#document.querySelector("body").requestFullscreen navigationUI: "hide"
 	
