@@ -322,7 +322,8 @@ setup = () ->
 		# https://github.com/WebAudio/web-audio-api/issues/1719
 		#hit: await load_sample ctx, 'sounds/808_snare_7525.flac'
 		# TODO: A bit too low and too much reverb(?)
-		hit: await load_sample ctx, 'sounds/808/TR808WAV/HT/HT10.WAV'
+		#hit: await load_sample ctx, 'sounds/808/TR808WAV/HT/HT10.WAV'
+		hit: await load_sample ctx, 'hit.wav'
 		complete: await load_sample ctx, 'complete.flac'
 	await ctx.close()
 	#n_listening = 10
