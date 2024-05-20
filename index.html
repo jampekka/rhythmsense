@@ -36,7 +36,7 @@ registerServiceWorker();
 		<p>The metronome will stop at some point. Keep tapping until you hear a bell.</p>
 		<p>Sometimes you will hear an echo of your tap. Try to keep the rhythm regardless.</p>
 		<p>The experiment lasts for approximately <span id="duration">(calculating)</span> minutes.</p>
-		<form id="consent_form">
+		<form id="consent_form" onsubmit="event.preventDefault(); document.activeElement.blur();">
 		<div class="form-group">
 		<label for="name_input">Session id</label>
 		<input type="text" id="name_input" class="form-control form-control-lg" placeholder="Session id" >

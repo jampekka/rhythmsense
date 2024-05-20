@@ -11314,8 +11314,9 @@ fieldset:disabled .btn {
 }
 #main_container {
   width: 100%;
-  height: 100%;
   position: fixed;
+  bottom: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11358,6 +11359,7 @@ fieldset:disabled .btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
 }
 #beatindicator {
   aspect-ratio: 1/1;
